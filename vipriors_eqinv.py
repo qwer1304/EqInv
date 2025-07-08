@@ -299,13 +299,14 @@ def main():
     assert args.stage1_model == 'ipirm'
     assert args.num_shot in ['10', '20', '50']
 
-    if not os.path.exists('misc/env_ref_set_vipriors{}_rn50_{}_pretrained'.format(args.num_shot, args.stage1_model)):
+    fp = 'misc/env_ref_set_vipriors{}_rn50_{}_pretrained'.format(args.num_shot, args.stage1_model)
+    if not os.path.exists(fp):
         print('no cluster file, thus first process...')
         env_ref_set = utils_cluster.cal_cosine_distance(model, memory_loader, args.class_num, temperature=0.1, anchor_class=None, class_debias_logits=True)
-        torch.save(env_ref_set, 'misc/env_ref_set_vipriors{}_rn50_{}_pretrained'.format(args.num_shot, args.stage1_model))
+        os.makedirs(fp, exist_ok=False)
+        torch.save(env_ref_set, fp)
     else:
-        env_ref_set = torch.load('misc/env_ref_set_vipriors{}_rn50_{}_pretrained'.format(args.num_shot, args.stage1_model))
-
+        env_ref_set = torch.load(fp)
 
     best_acc1 = 0
     for epoch in range(args.start_epoch, args.epochs):
