@@ -89,6 +89,9 @@ parser.add_argument('--inv_start', type=int, default=0, help='start epoch of inv
 parser.add_argument('--inv_weight', default=1., type=float, help='the weight of invariance')
 parser.add_argument('--mlp', action="store_true", default=False, help='use mlp before the loss and feature?')
 
+# image
+parser.add_argument('--image_size', type=int, default=224, help='image size')
+
 args = parser.parse_args()
 
 best_acc1 = 0
@@ -251,14 +254,14 @@ def main():
 
     if args.random_aug:
         train_transform_hard = transforms.Compose([
-            transforms.RandomResizedCrop(224),
+            transforms.RandomResizedCrop(args.image_size),
             transforms.RandomHorizontalFlip(),
             RandAugment(),
             transforms.ToTensor(),
             normalize, ])
 
     train_transform = transforms.Compose([
-        transforms.RandomResizedCrop(224),
+        transforms.RandomResizedCrop(args.image_size),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         normalize, ])
@@ -266,7 +269,7 @@ def main():
 
     val_transform = transforms.Compose([
         transforms.Resize(256),
-        transforms.CenterCrop(224),
+        transforms.CenterCrop(args.image_size),
         transforms.ToTensor(),
         normalize, ])
 

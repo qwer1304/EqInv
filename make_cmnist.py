@@ -105,13 +105,14 @@ def main(args):
     random.seed(args.seed)
     np.random.seed(args.seed)
     # datasets is a list of per-environment TensorDatasets (x,y)
-    save_dir_raw = args.output_dir + 'raw/'
+    output_dir = os.path.join(args.output_dir, str(args.target_image_size) + '/')
+    save_dir_raw = output_dir + 'raw/'
     os.makedirs(save_dir_raw, exist_ok=True)
-    save_dir_train = args.output_dir + 'train/'
+    save_dir_train = output_dir + 'train/'
     os.makedirs(save_dir_train, exist_ok=True)
-    save_dir_val = args.output_dir + 'val/'
+    save_dir_val = output_dir + 'val/'
     os.makedirs(save_dir_val, exist_ok=True)
-    save_dir_testgt = args.output_dir + 'testgt/'
+    save_dir_testgt = output_dir + 'testgt/'
     os.makedirs(save_dir_testgt, exist_ok=True)
     
     # datasets is a list of datasets, each one x, y
