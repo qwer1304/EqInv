@@ -382,8 +382,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
 
         masked_feature_for_globalcont, masked_feature, output = torch.cat([masked_feature1, masked_feature2], dim=0), torch.cat([masked_feature_inv1, masked_feature_inv2], dim=0), torch.cat([output1, output2], dim=0)
         target, images_idx = torch.cat([target, target], dim=0), torch.cat([images_idx, images_idx], dim=0)
-        images_idx.to(output.device)
-        target.to(output.device)
+        images_idx = images_idx.to(target.device)
 
         if args.inv_weight > 0:
             # compute env for different class
@@ -395,7 +394,6 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                     continue
 
                 output_pos, target_num_pos, masked_feature_pos = output[mask_pos], target[mask_pos], masked_feature[mask_pos] # get positive and negative samples
-                print(output.device, images_idx.device, target.device, masked_feature.device, mask_pos.device)
                 output_neg, images_idx_neg, target_num_neg, masked_feature_neg = output[~mask_pos], images_idx[~mask_pos], target[~mask_pos], masked_feature[~mask_pos]
 
                 # generate the env lookup table
