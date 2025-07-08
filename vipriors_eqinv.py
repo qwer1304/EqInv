@@ -392,8 +392,8 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                 if mask_pos.sum() == 0: # batch no current class
                     continue
 
-                print(output.device, target.device, masked_feature.device, mask_pos.device)
                 output_pos, target_num_pos, masked_feature_pos = output[mask_pos], target[mask_pos], masked_feature[mask_pos] # get positive and negative samples
+                print(output.device, images_idx.device, target.device, masked_feature.device, mask_pos.device)
                 output_neg, images_idx_neg, target_num_neg, masked_feature_neg = output[~mask_pos], images_idx[~mask_pos], target[~mask_pos], masked_feature[~mask_pos]
 
                 # generate the env lookup table
