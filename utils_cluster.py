@@ -115,6 +115,7 @@ def penalty_bce(logits, y, loss_function):
 
 
 def assign_samples(items, idxs, split, env_idx):
+    print(split.device, idxs.device)
     group_assign = split[idxs].argmax(dim=1)
     select_idx = torch.where(group_assign==env_idx)[0]
     return [i[select_idx] for i in items]
