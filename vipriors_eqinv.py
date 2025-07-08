@@ -289,9 +289,9 @@ def main():
 
     if args.evaluate:
         print('eval on vipriors val data')
-        validate(val_loader, model, criterion, args, epoch=-1)
+        validate(val_loader, model, criterion, args, epoch=-1, prefix='Val: ')
         print('eval on vipriors test data')
-        validate(test_loader, model, criterion, args, epoch=-1)
+        validate(test_loader, model, criterion, args, epoch=-1, prefix='Test: ')
         return
 
 
@@ -317,7 +317,7 @@ def main():
         train_env(train_loader, model, activation_map, env_ref_set, criterion, optimizer, epoch, args)
 
         # evaluate on validation set
-        acc1 = validate(val_loader, model, criterion, args, epoch)
+        acc1 = validate(val_loader, model, criterion, args, epoch, prefix='Val: ')
 
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
@@ -336,7 +336,7 @@ def main():
 
     utils.write_log('\nThe best accuracy: {}'.format(best_acc1), args.log_file, print_=True)
     utils.write_log('\nStart to test on Test Set', args.log_file, print_=True)
-    acc1_test = validate(test_loader, model, criterion, args, epoch)
+    acc1_test = validate(test_loader, model, criterion, args, epoch, prefix='Test: ')
 
 
 
@@ -462,7 +462,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
 
 
 
-def validate(val_loader, model, criterion, args, epoch):
+def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
     batch_time = AverageMeter('Time', ':6.3f', Summary.NONE)
     losses = AverageMeter('Loss', ':.4e', Summary.NONE)
     top1 = AverageMeter('Acc@1', ':6.2f', Summary.AVERAGE)
@@ -470,7 +470,7 @@ def validate(val_loader, model, criterion, args, epoch):
     progress = ProgressMeter(
         len(val_loader),
         [batch_time, losses, top1, top5],
-        prefix='Test: ',
+        prefix=prefix,
         log_file=args.log_file)
 
     # switch to evaluate mode
