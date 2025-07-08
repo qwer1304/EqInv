@@ -67,6 +67,9 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
 
 
         sim_sort = torch.argsort(sim_all, descending=True)
+        print(candidates.device)
+        print(sim_sort.device)
+        print(idx_bank.device)
         candidate_idx_sort = idx_bank[candidate_mask][sim_sort]
 
         # import pdb
