@@ -607,7 +607,10 @@ def accuracy(output, target, topk=(1,)):
 
         res = []
         for k in topk:
-            correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
+            if k < correct.size(0):
+                correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
+            else:
+                correct_k = torch.zeros_like(correct_k)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
