@@ -106,7 +106,8 @@ def main(args):
     np.random.seed(args.seed)
     # datasets is a list of per-environment TensorDatasets (x,y)
     output_dir = os.path.join(args.output_dir, str(args.target_image_size) + '/')
-    save_dir_raw = output_dir + 'raw/'
+    # torchvision downloads raw data to <root>/MNIST/raw/
+    save_dir_raw = args.output_dir
     os.makedirs(save_dir_raw, exist_ok=True)
     save_dir_train = output_dir + 'train/'
     os.makedirs(save_dir_train, exist_ok=True)
