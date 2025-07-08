@@ -402,6 +402,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                 for env_idx in range(len(env_ref_set_class)):
                     all_samples_env_table[env_ref_set_class[env_idx], env_idx] = 1  # set samples according to current subset to 1
 
+                all_samples_env_table = all_samples_env_table.to(output.device)
                 # traversal different env
                 for env_idx in range(len(env_ref_set_class)): # split the negative samples
                     output_neg_env, target_num_neg_env, masked_feature_neg_env = utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg], images_idx_neg, all_samples_env_table, env_idx)
