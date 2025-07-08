@@ -303,7 +303,7 @@ def main():
     if not os.path.exists(fp):
         print('no cluster file, thus first process...')
         env_ref_set = utils_cluster.cal_cosine_distance(model, memory_loader, args.class_num, temperature=0.1, anchor_class=None, class_debias_logits=True)
-        os.makedirs(fp, exist_ok=False)
+        os.makedirs(os.path.dirname(fp), exist_ok=False)
         torch.save(env_ref_set, fp)
     else:
         env_ref_set = torch.load(fp)
