@@ -60,6 +60,8 @@ parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                     dest='weight_decay')
 parser.add_argument('-p', '--print-freq', default=20, type=int,
                     metavar='N', help='print frequency (default: 10)')
+parser.add_argument('--test-freq', default=None, type=int,
+                    metavar='N', help='test frequency (default: None, test only at end)')
 parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('--evaluate', action="store_true", default=False, help='evaluate?')
@@ -321,6 +323,10 @@ def main():
 
         # evaluate on validation set
         acc1 = validate(val_loader, model, criterion, args, epoch, prefix='Val: ')
+
+        # evaluate on test set
+        if args.test_freq is not None and epoch % args.test_freq == 0:
+            acc1_test = validate(test_loader, model, criterion, args, epoch, prefix='Test: ')
 
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
