@@ -115,6 +115,17 @@ def penalty_bce(logits, y, loss_function):
 
 
 def assign_samples(items, idxs, split, env_idx):
+    """
+        items is a list of different objects (tensors) corresponding to the sample (e.g., output_neg, target_num_neg, masked_feature_neg) 
+        idxs are the indices of the negative samples in the batch
+        split is (N,2) with '1' in column 'e' indicating the the sample is in environment 'e' and '0' otherwise
+    """
+    # argmax() returns a (N,) tensor of indices with me maxium value ('1'), i.e. the environment to which that negative sample is assigned
     group_assign = split[idxs].argmax(dim=1)
+    # torch.where(condition) is identical to torch.nonzero(condition, as_tuple=True), which 
+    # returns a tuple of 1-D tensors, one for each dimension in input, each containing the indices (in that dimension) of all non-zero elements of input.
+    # If input has n dimensions, then the resulting tuple contains n tensors of size z, where z is the total number of non-zero elements in the input tensor.
+    # Picks the indices of the negative samples that belong to the requested environmnt
     select_idx = torch.where(group_assign==env_idx)[0]
+    # returns the samples from all input objects that correspond to the selected ones
     return [i[select_idx] for i in items]

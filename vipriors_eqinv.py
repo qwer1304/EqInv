@@ -372,6 +372,8 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
 
     end = time.time()
     for i, training_items in enumerate(train_loader):
+        # training_items is a batch
+        
         # measure data loading time
         data_time.update(time.time() - end)
 
@@ -389,6 +391,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
         if args.random_aug:
             output_hard = model(torch.cat([images1_hard, images2_hard]))
 
+        # both augmented images combined 
         masked_feature_for_globalcont, masked_feature, output = torch.cat([masked_feature1, masked_feature2], dim=0), torch.cat([masked_feature_inv1, masked_feature_inv2], dim=0), torch.cat([output1, output2], dim=0)
         target, images_idx = torch.cat([target, target], dim=0), torch.cat([images_idx, images_idx], dim=0)
         images_idx = images_idx.to(target.device)
@@ -399,13 +402,23 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
             for class_idx in range(args.class_num):
 
                 mask_pos = target==class_idx # choose the specifc positive samples
-                if mask_pos.sum() == 0: # batch no current class
+                if mask_pos.sum() == 0: # batch has no images from current class
                     continue
 
+                # note that these are positive & negatives samples in the batch NOT split into environments
+                # positiveness/negativeness is determined by sample's label
                 output_pos, target_num_pos, masked_feature_pos = output[mask_pos], target[mask_pos], masked_feature[mask_pos] # get positive and negative samples
                 output_neg, images_idx_neg, target_num_neg, masked_feature_neg = output[~mask_pos], images_idx[~mask_pos], target[~mask_pos], masked_feature[~mask_pos]
 
                 # generate the env lookup table
+                """
+                    env_ref_set is a dictionary over class labels.
+                    each entry is a tuple over class-environments (K = 2) of sample indices in loader that are assigned to that environment (equal number)
+                    the environments have been precomputed by running the images through the default (pre-trained) model, calculated the (corrected) cosine
+                    distance between the "other" samples and anchor samples, sorting in descending order the distances and splitting the result 50/50 into
+                    two environments.
+                    all_samples_env_table is a table (num_samples in loader, num_samples in class-environment)
+                """
                 env_ref_set_class = env_ref_set[class_idx]
                 all_samples_env_table = torch.zeros(all_sample_num, len(env_ref_set_class))
                 for env_idx in range(len(env_ref_set_class)):
@@ -414,19 +427,22 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                 all_samples_env_table = all_samples_env_table.to(output.device)
                 # traversal different env
                 for env_idx in range(len(env_ref_set_class)): # split the negative samples
+                    # assign_samples selects the negative samples in this environment
                     output_neg_env, target_num_neg_env, masked_feature_neg_env = utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg], images_idx_neg, all_samples_env_table, env_idx)
+                    # output_env are all samples (positive and negative) of that environment
                     output_env, target_num_env, masked_feature_env = torch.cat([output_pos, output_neg_env], dim=0), torch.cat([target_num_pos, target_num_neg_env], dim=0), torch.cat([masked_feature_pos, masked_feature_neg_env], dim=0)
                     masked_feature_env_norm = F.normalize(masked_feature_env, dim=-1)
+                    # cont_loss_env is the contrastive loss of this environment
                     cont_loss_env = args.cont_weight * info_nce_loss_supervised(masked_feature_env_norm.unsqueeze(1), masked_feature_env_norm.size(0), temperature=args.temperature, labels=target_num_env, choose_pos=target_num_env==class_idx)
 
-                    env_nll.append(criterion(output_env, target_num_env))
-                    temp_pen.append(cont_loss_env)
+                    env_nll.append(criterion(output_env, target_num_env)) # nll of this environment appended to list
+                    temp_pen.append(cont_loss_env) # contrastive loss of this environment appended to list
 
-                env_pen.append(torch.var(torch.stack(temp_pen)))
+                env_pen.append(torch.var(torch.stack(temp_pen))) # varaince of contrastive losses of the environments appended to list of posses of all classes
                 temp_pen = []
 
 
-            # Invariance Term
+            # Invariance Term: mean of variances of contrastive losses of class-environments
             inv_weight = args.inv_weight if epoch >= args.inv_start else 0.
             assert args.inv == 'rex'
             rex_penalty = sum(env_pen) / len(env_pen)
