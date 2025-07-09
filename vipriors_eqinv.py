@@ -94,6 +94,9 @@ parser.add_argument('--mlp', action="store_true", default=False, help='use mlp b
 # image
 parser.add_argument('--image_size', type=int, default=224, help='image size')
 
+# color in label
+parser.add_argument('--color_in_label', action='store_true', help='label also includes color as label=color * #targets + target')
+
 args = parser.parse_args()
 
 best_acc1 = 0
@@ -275,17 +278,19 @@ def main():
         transforms.ToTensor(),
         normalize, ])
 
-
-    images = utils.Imagenet_idx(root=args.data+'/val', transform=val_transform)
+    target_transform = extract_target_from_label if args.color_in_label else None
+    
+    images = utils.Imagenet_idx(root=args.data+'/val', transform=val_transform, target_transform=target_transform)
     val_loader = torch.utils.data.DataLoader(images, batch_size=args.batch_size, num_workers=args.workers, shuffle=False)
-    test_images = utils.Imagenet_idx(root=args.data+'/testgt', transform=val_transform)
+    test_images = utils.Imagenet_idx(root=args.data+'/testgt', transform=val_transform, target_transform=target_transform)
     test_loader = torch.utils.data.DataLoader(test_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=False)
 
     if args.random_aug:
-        train_images = utils.Imagenet_idx_pair_transformone(root=args.data + '/train', transform_simple=train_transform, transform_hard=train_transform_hard)
+        train_images = utils.Imagenet_idx_pair_transformone(root=args.data + '/train', transform_simple=train_transform, 
+            transform_hard=train_transform_hard, target_transform=target_transform)
     else:
-        train_images = utils.Imagenet_idx_pair(root=args.data+'/train', transform=train_transform)
-    memory_images = utils.Imagenet_idx(root=args.data + '/train', transform=val_transform)
+        train_images = utils.Imagenet_idx_pair(root=args.data+'/train', transform=train_transform, target_transform=target_transform)
+    memory_images = utils.Imagenet_idx(root=args.data + '/train', transform=val_transform, target_transform=target_transform)
     train_loader = torch.utils.data.DataLoader(train_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=True, drop_last=True)
     memory_loader = torch.utils.data.DataLoader(memory_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=False)
 
@@ -348,7 +353,8 @@ def main():
     acc1_test = validate(test_loader, model, criterion, args, epoch, prefix='Test: ')
 
 
-
+def extract_target_from_label(label):
+    return label % 2 # for CMNIST, 2 colors
 
 def train_env(train_loader, model, activation_map, env_ref_set, criterion, optimizer, epoch, args):
     batch_time = AverageMeter('Time', ':6.3f')

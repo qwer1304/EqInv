@@ -59,7 +59,7 @@ class MultipleEnvironmentMNIST(MultipleDomainDataset):
 
 class ColoredMNIST(MultipleEnvironmentMNIST):
 
-    def __init__(self, root):
+    def __init__(self, root, include_color=False):
         ENVIRONMENTS = ['p90', 'p85', 'p80', 'p75', 'm90']
         #                                 (root, environments,                dataset_transform,  input_shape,  num_classes)
         super(ColoredMNIST, self).__init__(root, [0.1, 0.15, 0.2, 0.25, 0.9], self.color_dataset, (3, 28, 28,), 2)
@@ -68,6 +68,7 @@ class ColoredMNIST(MultipleEnvironmentMNIST):
         self.num_classes = 2
         self.N_WORKERS = 1
         self.environments = ENVIRONMENTS
+        self.include_color = include_color
 
     def color_dataset(self, images, labels, environment):
         # Assign a binary label based on the digit
@@ -86,7 +87,10 @@ class ColoredMNIST(MultipleEnvironmentMNIST):
         images[torch.tensor(range(len(images))), (1 - colors).long(), :, :] *= 0
 
         x = images.float().div_(255.0)
-        y = labels.view(-1).long()
+        if self.include_color:
+            y = colors.view(-1).long() * 2 + labels.view(-1).long()
+        else:
+            y = labels.view(-1).long()
 
         return TensorDataset(x, y)
 
@@ -157,6 +161,7 @@ if __name__ == "__main__":
     parser.add_argument('--val_domain', type=int)
     parser.add_argument('--test_domain', type=int)
     parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--add_color', action='store_true', help='include color in label')
     args = parser.parse_args()
     
     main(args)
