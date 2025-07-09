@@ -61,6 +61,8 @@ class ColoredMNIST(MultipleEnvironmentMNIST):
 
     def __init__(self, root, include_color=False):
         ENVIRONMENTS = ['p90', 'p85', 'p80', 'p75', 'm90']
+        # must come before calling super
+        self.include_color = include_color
         #                                 (root, environments,                dataset_transform,  input_shape,  num_classes)
         super(ColoredMNIST, self).__init__(root, [0.1, 0.15, 0.2, 0.25, 0.9], self.color_dataset, (3, 28, 28,), 2)
 
@@ -68,7 +70,6 @@ class ColoredMNIST(MultipleEnvironmentMNIST):
         self.num_classes = 2
         self.N_WORKERS = 1
         self.environments = ENVIRONMENTS
-        self.include_color = include_color
 
     def color_dataset(self, images, labels, environment):
         # Assign a binary label based on the digit
