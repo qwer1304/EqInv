@@ -24,7 +24,7 @@ from collections import defaultdict
 import utils
 import utils_cluster
 from torchvision.models.resnet import resnet50
-from randaugment import RandAugment
+#from randaugment import RandAugment
 
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
@@ -261,7 +261,7 @@ def main():
         train_transform_hard = transforms.Compose([
             transforms.RandomResizedCrop(args.image_size),
             transforms.RandomHorizontalFlip(),
-            RandAugment(),
+            transforms.RandAugment(),
             transforms.ToTensor(),
             normalize, ])
 
