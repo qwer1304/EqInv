@@ -57,7 +57,7 @@ class MultipleEnvironmentMNIST(MultipleDomainDataset):
         self.input_shape = input_shape
         self.num_classes = num_classes
 
-class ColoredMNIST(MultipleEnvironmentMNIST):
+class ColoredMNIST(MultipleEnvironmentMNIST, include_color=False):
 
     def __init__(self, root, include_color=False):
         ENVIRONMENTS = ['p90', 'p85', 'p80', 'p75', 'm90']
@@ -121,7 +121,7 @@ def main(args):
     os.makedirs(save_dir_testgt, exist_ok=True)
     
     # datasets is a list of datasets, each one x, y
-    datasets = ColoredMNIST(save_dir_raw)
+    datasets = ColoredMNIST(save_dir_raw, include_color=args.add_color)
 
     labels = list(range(datasets.num_classes))
     create_labels_dir(save_dir_train, labels)
