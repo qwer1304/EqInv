@@ -57,7 +57,7 @@ class MultipleEnvironmentMNIST(MultipleDomainDataset):
         self.input_shape = input_shape
         self.num_classes = num_classes
 
-class ColoredMNIST(MultipleEnvironmentMNIST, include_color=False):
+class ColoredMNIST(MultipleEnvironmentMNIST):
 
     def __init__(self, root, include_color=False):
         ENVIRONMENTS = ['p90', 'p85', 'p80', 'p75', 'm90']
