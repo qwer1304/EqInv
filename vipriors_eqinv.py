@@ -90,6 +90,7 @@ parser.add_argument('--inv', type=str, default='irm', help='type of invariant lo
 parser.add_argument('--inv_start', type=int, default=0, help='start epoch of inv loss')
 parser.add_argument('--inv_weight', default=1., type=float, help='the weight of invariance')
 parser.add_argument('--mlp', action="store_true", default=False, help='use mlp before the loss and feature?')
+parser.add_argument('--backbone_propagate', action="store_true", default=False, help='whether to propagate inv loss to backbone')
 
 # image
 parser.add_argument('--image_size', type=int, default=224, help='image size')
@@ -389,6 +390,10 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
         target = target.cuda(non_blocking=True)
 
         # compute output
+        # def forward(self, image, return_feature=False, return_masked_feature=False)
+        # output = self.fc(masked_feature_erm)
+        # return self.mlp(masked_feature_erm), masked_feature_inv, output
+        # masked_feature_inv is detached from backbone
         masked_feature1, masked_feature_inv1, output1 = model(images1, return_masked_feature=True)
         masked_feature2, masked_feature_inv2, output2 = model(images2, return_masked_feature=True)
         if args.random_aug:
