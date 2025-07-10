@@ -95,7 +95,7 @@ parser.add_argument('--mlp', action="store_true", default=False, help='use mlp b
 parser.add_argument('--image_size', type=int, default=224, help='image size')
 
 # color in label
-parser.add_argument('--target_transform', type="str", default=None, help='a function definition to apply to target')
+parser.add_argument('--target_transform', type=str, default=None, help='a function definition to apply to target')
 
 args = parser.parse_args()
 
