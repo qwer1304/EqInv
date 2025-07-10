@@ -143,7 +143,7 @@ class ResNet_ft_eqinv(nn.Module):
 
         if self.mask_layer is not None:
             masked_feature_erm = F.normalize(self.activation_map.apply(self.mask_layer)*feature, dim=-1) * self.scaler # nomalize for numeral stability
-            if args.backbone_propagate:
+            if self.args.backbone_propagate:
                 masked_feature_inv = F.normalize(self.activation_map.apply(self.mask_layer)*feature, dim=-1) * self.scaler 
             else:
                 # invariance loss not backward propagated to backbone, thus detach the feature from masked_feature
