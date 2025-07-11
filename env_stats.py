@@ -76,25 +76,18 @@ def main(args):
     label = 1
     env0 = 0
     env1 = 1
-    anchor = 0
-    idx_a0_e0 = env_ref_set[anchor][env0].tolist()
-    idx_a0_e1 = env_ref_set[anchor][env1].tolist()
-    idx_a0_other = [j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]
-    print(len(idx_a0_e0), len(idx_a0_e1), len(idx_a0_other))
-    idx_diff = list(set(idx_a0_other) - set(idx_a0_e0) - set(idx_a0_e1))
-    print([j in idx_a0_other for j in idx_diff])
-    return
 
-    print(f'anchor:',anchor,f'env {env0}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env0] if j < len(memory_images)].count(0), 
-        f'env {env1}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env1] if j < len(memory_images.imgs)].count(1))
+    anchor = 0
+    print(f'anchor:',anchor,f'env {env0}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env0]].count(0), 
+        f'env {env1}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env1]].count(1))
 
     anchor = 1
     print(len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
         # total of "other"
         len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
-    print(f'anchor:',anchor,f'env {env0}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env0] if j < len(memory_images)].count(0), 
-        f'env {env1}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env1] if j < len(memory_images.imgs)].count(1))
+    print(f'anchor:',anchor,f'env {env0}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env0]].count(0), 
+        f'env {env1}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env1]].count(1))
     return
 
     for k, indeces in env_ref_set.items():
