@@ -74,7 +74,8 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
         # pdb.set_trace()
 
         env_set[anchor_class_] = torch.chunk(candidate_idx_sort, 2) # 2 environments
-        assert len(env_set[anchor_class_][0]) + len(env_set[anchor_class_][1]) == len(candidate_idx_sort), 'Samples lost'
+        assert len(env_set[anchor_class_][0]) + len(env_set[anchor_class_][1]) == len(candidate_idx_sort), 'Other samples lost'
+        assert len(memory_data_loader) == (len(anchor_idx) + len(candidate_idx_sort)), 'Some samples lost'
 
     return env_set
 
