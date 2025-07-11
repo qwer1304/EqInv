@@ -110,6 +110,7 @@ def main(args):
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels)
         ax[i].legend()
+        ax[i].grid(True)
 
         i += 1
         col_a = [memory_images.imgs[j][1] // 2 for j in env_a]
@@ -134,6 +135,7 @@ def main(args):
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels)
         ax[i].legend()  
+        ax[i].grid(True)
 
         # How to handle final display or saving
         if is_notebook():
