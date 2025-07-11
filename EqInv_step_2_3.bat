@@ -1,4 +1,4 @@
-set CUDA_VISIBLE_DEVICES=0
+set CUDA_VISIBLE_DEVICES=""
 python vipriors_eqinv.py ^
 -b 128 ^
 --name cmnist_ipirm_mask_sigmoid_rex100._start10 ^

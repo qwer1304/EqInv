@@ -1,9 +1,18 @@
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 import torch
 import utils
 import matplotlib as mpl
+import matplotlib
+matplotlib.use('TkAgg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 import numpy as np
-    
+
+mpl_version_str = mpl.__version__
+mpl_version_tuple = tuple(int(part) for part in mpl_version_str.split('.'))
+hatches_linewidth_supported = mpl_version_tuple >= (3, 10, 0)
+
 stage1_model = 'ipirm'
 num_shot = 10
 fp = 'misc/env_ref_set_vipriors{}_rn50_{}_pretrained'.format(num_shot, stage1_model)
@@ -17,6 +26,8 @@ for k, indeces in env_ref_set.items():
     fig, ax = plt.subplots(1, 2, figsize=(2*5, 4))
     env0_n, env1_n = indeces[0].tolist(), indeces[1].tolist()
     env_a = list(set(all_idx) - set(env0_n) - set(env1_n))
+    env0_n = [x for x in env0_n if x < num_samples]
+    env1_n = [x for x in env1_n if x < num_samples]
     
     i = 0
     col_env0, col_env1 = [memory_images.imgs[j][1] // 2 for j in env0_n], [memory_images.imgs[j][1] // 2 for j in env1_n]
@@ -32,19 +43,23 @@ for k, indeces in env_ref_set.items():
     x = np.arange(len(labels))
     width = 0.35
     colors_hatches = ['red', 'lime']
-    bar = ax[i].bar(x - width/2, perc_0, width, label='env_0', hatch="x", color='lightsteelblue', kwargs={"hatch_linewidth": 3.})
-    """
+    if hatches_linewidth_supported:
+        bar = ax[i].bar(x - width/2, perc_0, width, label='env_0', hatch="x", color='lightsteelblue', hatch_linewidth=3.0)
+    else:
+        bar = ax[i].bar(x - width/2, perc_0, width, label='env_0', hatch="x", color='lightsteelblue')
+
     for j, bc in enumerate(bar):
         bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
         bc.stale = True
-    """
     
-    bar = ax[i].bar(x + width/2, perc_1, width, label='env_1', hatch="x", color='orange', kwargs={"hatch_linewidth": 3.})
-    """
+    if hatches_linewidth_supported:
+        bar = ax[i].bar(x + width/2, perc_1, width, label='env_1', hatch="x", color='orange', hatch_linewidth=3.)
+    else:
+        bar = ax[i].bar(x + width/2, perc_1, width, label='env_1', hatch="x", color='orange')
+
     for j, bc in enumerate(bar):
-        bc._hatch_color = mpl.colors.to_rgba(colors[j])
+        bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
         bc.stale = True
-    """
         
     ax[i].set_ylabel('Percentage (%)')
     ax[i].set_xlabel('Color')
@@ -72,12 +87,12 @@ for k, indeces in env_ref_set.items():
     
     ax[i].set_ylabel('Percentage (%)')
     ax[i].set_xlabel('Color')
-    ax[i].set_title(f'Percentage of colors R/G in for anchor {k}')
+    ax[i].set_title(f'Percentage of colors R/G for anchor {k}')
     ax[i].set_xticks(x)
     ax[i].set_xticklabels(labels)
     ax[i].legend()  
     
-    plt.show()
+    plt.show(block = k == len(env_ref_set)-1)
 
     idxs = env0_n + env_a
     col0 = [memory_images.imgs[j][1] // 2 for j in idxs]
@@ -88,3 +103,19 @@ for k, indeces in env_ref_set.items():
     tar1 = [memory_images.imgs[j][1] % 2 for j in idxs]
     corr1 = np.corrcoef(np.array(col1), np.array(tar1))
     print("Color/Label correlations:", "env 0:", corr0[0,1], "env 1:", corr1[0,1])
+    
+train_images = utils.Imagenet_idx(root=data+'/train', transform=None, target_transform=None)
+val_images = utils.Imagenet_idx(root=data+'/val', transform=None, target_transform=None)
+test_images = utils.Imagenet_idx(root=data+'/testgt', transform=None, target_transform=None)
+
+num_train = len(train_images)
+num_vals = len(val_images)
+num_test = len(test_images)
+
+col_train, tar_train = [train_images.imgs[j][1] // 2 for j in range(num_train)], [train_images.imgs[j][1] % 2 for j in range(num_train)]
+col_val, tar_val = [val_images.imgs[j][1] // 2 for j in range(num_vals)], [val_images.imgs[j][1] % 2 for j in range(num_vals)]
+col_test, tar_test = [test_images.imgs[j][1] // 2 for j in range(num_test)], [test_images.imgs[j][1] % 2 for j in range(num_test)]
+corr_train = np.corrcoef(np.array(col_train), np.array(tar_train))
+corr_val = np.corrcoef(np.array(col_val), np.array(tar_val))
+corr_test = np.corrcoef(np.array(col_test), np.array(tar_test))
+print("Color/Label correlations:", "train:", corr_train[0,1], "val:", corr_val[0,1], "test:", corr_test[0,1])

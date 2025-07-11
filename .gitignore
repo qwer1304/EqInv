@@ -3,3 +3,4 @@ data/*
 pretrained_models/*
 save/*
 misc/*
+EqInv.tws
