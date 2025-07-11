@@ -82,16 +82,18 @@ def main(args):
         # total of "other"
         'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
-    print(f'anchor:',anchor,f'env {env0}:',[memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env0]].count(0), 
-        f'env {env1}:',[memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env1]].count(1))
+    count0 = [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env0]].count(0)
+    count1 = [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env1]].count(1)
+    print(f'anchor:',anchor,f'env {env0}:', count0, f'env {env1}:', count1, 'total:', count0 + count1)
 
     anchor = 1
     print(f'anchor {anchor}:', 'env0 + env1:',len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
         # total of "other"
         'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
-    print(f'anchor {anchor}', f'env {env0}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env0]].count(0), 
-        f'env {env1}:',[memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env1]].count(1))
+    count0 = [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env0]].count(0)
+    count1 = [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env1]].count(1)
+    print(f'anchor:',anchor,f'env {env0}:', count0, f'env {env1}:', count1, 'total:', count0 + count1)
     return
 
     for k, indeces in env_ref_set.items():
