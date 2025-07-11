@@ -7,6 +7,8 @@ import matplotlib as mpl
 import numpy as np
 
 import os
+import argparse
+
 
 def is_notebook():
     try:
