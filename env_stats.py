@@ -155,7 +155,7 @@ def main(args):
         env_a = list(set(all_idx) - set(env_n[0]) - set(env_n[1])) # anchor samples
 
         i = 0
-        env_cols = np.zeros((2, 2), dtype=int) # (env, col)
+        env_col = np.zeros((2, 2), dtype=int) # (env, col)
 
         for e in range(2):
             env_col[e] = np.array([
