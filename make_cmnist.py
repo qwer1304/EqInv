@@ -59,24 +59,24 @@ class MultipleEnvironmentMNIST(MultipleDomainDataset):
 
 class ColoredMNIST(MultipleEnvironmentMNIST):
 
-    def __init__(self, root, include_color=False):
-        ENVIRONMENTS = ['p90', 'p85', 'p80', 'p75', 'm90']
+    def __init__(self, root, args):
         # must come before calling super
-        self.include_color = include_color
-        #                                 (root, environments,                dataset_transform,  input_shape,  num_classes)
-        super(ColoredMNIST, self).__init__(root, [0.1, 0.15, 0.2, 0.25, 0.9], self.color_dataset, (3, 28, 28,), 2)
+        self.include_color = args.include_color
+        self.label_noise = args.label_noise
+        #                                 (root, environments,  dataset_transform,  input_shape,  num_classes)
+        super(ColoredMNIST, self).__init__(root, args.env_corr, self.color_dataset, (3, 28, 28,), 2)
 
         self.input_shape = (3, 28, 28,)
         self.num_classes = 4 if self.include_color else 2
         self.N_WORKERS = 1
-        self.environments = ENVIRONMENTS
+        self.environments = args.env_names
 
-    def color_dataset(self, images, labels, environment):
+    def color_dataset(self, images, digits, environment):
         # Assign a binary label based on the digit
-        labels = (labels < 5).float()
-        # Flip label with probability 0.25
+        labels = (digits < 5).float()
+        # Flip label with probability label_noise
         labels = self.torch_xor_(labels,
-                                 self.torch_bernoulli_(0.25, len(labels)))
+                                 self.torch_bernoulli_(self.label_noise, len(labels)))
 
         # Assign a color based on the label; flip the color with probability e
         colors = self.torch_xor_(labels,
@@ -122,7 +122,7 @@ def main(args):
     os.makedirs(save_dir_testgt, exist_ok=True)
     
     # datasets is a list of datasets, each one x, y
-    datasets = ColoredMNIST(save_dir_raw, include_color=args.add_color)
+    datasets = ColoredMNIST(save_dir_raw, args)
 
     labels = list(range(datasets.num_classes))
     create_labels_dir(save_dir_train, labels)
@@ -163,7 +163,14 @@ if __name__ == "__main__":
     parser.add_argument('--test_domain', type=int)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--add_color', action='store_true', help='include color in label')
+    parser.add_argument('--env_names', type=str, nargs='+', help='environment names')
+    parser.add_argument('--env_corr', type=float, nargs='+', help='environment label/color correlations')
+    parser.add_argument('--label_noise', type=float, default=0.25, help='label noise')
     args = parser.parse_args()
+    
+    assert len(args.env_names) == len(args.env_corr), 'Number of environment names must match that of correlations'
+    assert [x > 1. or x < 0 for x in args.env_corr], 'Correlations out of range'
+    assert args.label_noise >= 0 and args.label_noise <= 1, 'Label noise out of range'
     
     main(args)
 
