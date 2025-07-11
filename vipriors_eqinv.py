@@ -98,6 +98,9 @@ parser.add_argument('--image_size', type=int, default=224, help='image size')
 # color in label
 parser.add_argument('--target_transform', type=str, default=None, help='a function definition to apply to target')
 
+# space between columns
+parser.add_argument('--spaces', type=int, default=4, help='spaces between entries in progress print (instead of tab)')
+
 args = parser.parse_args()
 
 best_acc1 = 0
@@ -491,7 +494,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
         end = time.time()
 
         if i % args.print_freq == 0:
-            progress.display(i)
+            progress.display(i, args.spaces)
 
 
 
@@ -532,7 +535,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             end = time.time()
 
             if i % args.print_freq == 0:
-                progress.display(i)
+                progress.display(i, args.spaces)
 
         progress.display_summary(epoch)
 
@@ -600,10 +603,10 @@ class ProgressMeter(object):
         self.prefix = prefix
         self.log_file = log_file
 
-    def display(self, batch):
+    def display(self, batch, spaces):
         entries = [self.prefix + self.batch_fmtstr.format(batch)]
         entries += [str(meter) for meter in self.meters]
-        print('\t'.join(entries))
+        print((' ' * spaces).join(entries))
 
 
     def display_summary(self, epoch):

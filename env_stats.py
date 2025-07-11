@@ -139,7 +139,8 @@ for k, indeces in env_ref_set.items():
         pass
     elif is_headless():
         plt.savefig(f"plot_{k}.png")
-        print("Plot saved to plot.png (headless mode).")
+        plt.close()  # Close figure to avoid duplicate output and free memory
+        print(f"Plot saved to plot{k}.png (headless mode).")
     else:
         plt.show(block = k == len(env_ref_set)-1)
 
