@@ -193,7 +193,7 @@ def main(args):
         ax[i].set_title(f'Percentage of colors R/G in envs 0/1 for anchor {k}')
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels)
-        ax[i].legend()
+        ax[i].legend(loc='center')
         ax[i].grid(True)
 
         """
