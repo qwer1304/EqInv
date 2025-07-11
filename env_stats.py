@@ -78,7 +78,7 @@ def main(args):
     env1 = 1
 
     anchor = 0
-    print(f'anchor {annchor}:', 'env0 + env1:',len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
+    print(f'anchor {anchor}:', 'env0 + env1:',len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
         # total of "other"
         'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
