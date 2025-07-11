@@ -90,7 +90,7 @@ def main(args):
     count_c1_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(1)
     print(f'anchor:',anchor,f'env {env0}:', count_c0_o, f'env {env1}:', count_c1_o, 'total:', count_c0_o + count_c1_o)
     print(f'anchor:',anchor, count_c0_a, count_c1_a, 'total:', count_c0_a + count_c1_a)
-    print(c0_a + c1_a + c0_o + c1_o)
+    print(count_c0_a + count_c1_a + count_c0_o + count_c1_o)
 
     anchor = 1
     print(f'anchor {anchor}:', 'env0 + env1:',len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
@@ -105,7 +105,7 @@ def main(args):
     count_c1_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(1)
     print(f'anchor:',anchor,f'env {env0}:', count_c0_o, f'env {env1}:', count_c1_o, 'total:', count_c0_o + count_c1_o)
     print(f'anchor:',anchor, count_c0_a, count_c1_a, 'total:', count_c0_a + count_c1_a)
-    print(c0_a + c1_a + c0_o + c1_o)
+    print(count_c0_a + count_c1_a + count_c0_o + count_c1_o)
 
     return
 
