@@ -65,6 +65,24 @@ def main(args):
     num_samples = len(memory_images.imgs)
     all_idx = list(range(num_samples))
 
+    """
+    env_ref_set is a dictionary over class labels.
+    each entry is a tuple over class-environments (K = 2) of sample indices in loader that are assigned to that environment (equal number)
+    the environments have been precomputed by running the images through the default (pre-trained) model, calculated the (corrected) cosine
+    distance between the "other" samples and anchor samples, sorting in descending order the distances and splitting the result 50/50 into
+    two environments.
+    """
+    print(len(env_ref_set[1][0]), len(env_ref_set[1][1]))
+    env0 = 0
+    env1 = 1
+    anchor = 0
+    print(f'achor:',anchor,f'env {env0}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env0] if j < len(memory_images.imgs)].count(0), 
+        f'env {env1}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env1] if j < len(memory_images.imgs)].count(1))
+    anchor = 1
+    print(f'achor:',anchor,f'env {env0}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env0] if j < len(memory_images.imgs)].count(0), 
+        f'env {env1}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env1] if j < len(memory_images.imgs)].count(1))
+    return
+
     for k, indeces in env_ref_set.items():
         fig, ax = plt.subplots(1, 2, figsize=(2*5, 4))
         env0_n, env1_n = indeces[0].tolist(), indeces[1].tolist()
