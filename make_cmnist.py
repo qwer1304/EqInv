@@ -162,7 +162,7 @@ if __name__ == "__main__":
     parser.add_argument('--val_domain', type=int)
     parser.add_argument('--test_domain', type=int)
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--add_color', action='store_true', help='include color in label')
+    parser.add_argument('--include_color', action='store_true', help='include color in label')
     parser.add_argument('--env_names', type=str, nargs='+', help='environment names')
     parser.add_argument('--env_corr', type=float, nargs='+', help='environment label/color correlations')
     parser.add_argument('--label_noise', type=float, default=0.25, help='label noise')
