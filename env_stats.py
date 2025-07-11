@@ -4,10 +4,51 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 import torch
 import utils
 import matplotlib as mpl
-import matplotlib
-matplotlib.use('TkAgg')  # Use non-interactive backend
-import matplotlib.pyplot as plt
 import numpy as np
+
+import os
+
+def is_notebook():
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True  # Jupyter notebook or JupyterLab
+        elif shell == 'TerminalInteractiveShell':
+            return False  # IPython terminal
+        else:
+            return False
+    except NameError:
+        return False  # Probably standard Python script
+
+def is_headless():
+    if os.name != "nt":
+        return os.environ.get("DISPLAY", "") == ""
+    else:
+        return False  # Windows usually has display
+
+def setup_backend():
+    if is_notebook():
+        print("Detected Jupyter notebook: using inline backend.")
+        from IPython import get_ipython
+        get_ipython().run_line_magic("matplotlib", "inline")
+    elif os.name == "nt":
+        try:
+            mpl.use("TkAgg")
+            print("Using TkAgg backend on Windows (popup windows).")
+        except ImportError as e:
+            print("Could not set TkAgg backend:", e)
+            print("Falling back to default backend.")
+    elif is_headless():
+        mpl.use("Agg")
+        print("Headless environment: using Agg backend (save to file).")
+    else:
+        print("Using default interactive backend.")
+
+    import matplotlib.pyplot as plt
+    return plt
+
+# --- Call once at the top of your script ---
+plt = setup_backend()
 
 mpl_version_str = mpl.__version__
 mpl_version_tuple = tuple(int(part) for part in mpl_version_str.split('.'))
@@ -92,7 +133,15 @@ for k, indeces in env_ref_set.items():
     ax[i].set_xticklabels(labels)
     ax[i].legend()  
     
-    plt.show(block = k == len(env_ref_set)-1)
+    # How to handle final display or saving
+    if is_notebook():
+        # In notebook, it automatically displays inline
+        pass
+    elif is_headless():
+        plt.savefig(f"plot_{k}.png")
+        print("Plot saved to plot.png (headless mode).")
+    else:
+        plt.show(block = k == len(env_ref_set)-1)
 
     idxs = env0_n + env_a
     col0 = [memory_images.imgs[j][1] // 2 for j in idxs]
