@@ -150,7 +150,7 @@ def main(args):
     G = 1
 
     for k, indeces in env_ref_set.items(): # over anchors, indeces is a tuple
-        fig, ax = plt.subplots(1, 2, figsize=(2*5, 4))
+        fig, ax = plt.subplots(1, 1, figsize=(1*5, 4))
         env_n = [indeces[0].tolist(), indeces[1].tolist()] # "other" samples split between environments
         env_a = list(set(all_idx) - set(env_n[0]) - set(env_n[1])) # anchor samples
 
@@ -163,25 +163,25 @@ def main(args):
                 sum([j // 2 == G for j in env_n[e]])
             ])
 
-        perc = env_col / env_col.sum(axis=0, keepdims=True) # (col,)
+        perc = env_col / env_col.sum(axis=0, keepdims=True) # (env, col)
 
         labels = ['R', 'G']
         x = np.arange(len(labels))
         width = 0.35
         colors_hatches = ['red', 'lime']
         if hatches_linewidth_supported:
-            bar = ax[i].bar(x - width/2, perc[R], width, label='env_0', hatch="x", color='lightsteelblue', hatch_linewidth=3.0)
+            bar = ax[i].bar(x - width/2, perc[0], width, label='env_0', hatch="x", color='lightsteelblue', hatch_linewidth=3.0)
         else:
-            bar = ax[i].bar(x - width/2, perc[R], width, label='env_0', hatch="x", color='lightsteelblue')
+            bar = ax[i].bar(x - width/2, perc[0], width, label='env_0', hatch="x", color='lightsteelblue')
 
         for j, bc in enumerate(bar):
             bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
             bc.stale = True
 
         if hatches_linewidth_supported:
-            bar = ax[i].bar(x + width/2, perc[G], width, label='env_1', hatch="x", color='orange', hatch_linewidth=3.)
+            bar = ax[i].bar(x + width/2, perc[1], width, label='env_1', hatch="x", color='orange', hatch_linewidth=3.)
         else:
-            bar = ax[i].bar(x + width/2, perc[G], width, label='env_1', hatch="x", color='orange')
+            bar = ax[i].bar(x + width/2, perc[1], width, label='env_1', hatch="x", color='orange')
 
         for j, bc in enumerate(bar):
             bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
