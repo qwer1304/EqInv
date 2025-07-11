@@ -66,21 +66,24 @@ def main(args):
     all_idx = list(range(num_samples))
 
     """
-    env_ref_set is a dictionary over class labels.
+    env_ref_set is a dictionary "over" class labels.
     each entry is a tuple over class-environments (K = 2) of sample indices in loader that are assigned to that environment (equal number)
     the environments have been precomputed by running the images through the default (pre-trained) model, calculated the (corrected) cosine
     distance between the "other" samples and anchor samples, sorting in descending order the distances and splitting the result 50/50 into
     two environments.
     """
+    # memory_images are ALL images - anchor and other
     env0 = 0
     env1 = 1
     anchor = 0
-    print(len(env_ref_set[anchor][env0]), len(env_ref_set[anchor][env1]))
-    print(f'achor:',anchor,f'env {env0}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env0] if j < len(memory_images.imgs)].count(0), 
+    print(len(env_ref_set[anchor][env0]), len(env_ref_set[anchor][env1]), len([j for j in range(len(memory_images.imgs)) if \
+        memory_images.imgs[j][1] // 2 == anchor]))
+    print(f'anchor:',anchor,f'env {env0}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env0] if j < len(memory_images.imgs)].count(0), 
         f'env {env1}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env1] if j < len(memory_images.imgs)].count(1))
     anchor = 1
-    print(len(env_ref_set[anchor][env0]), len(env_ref_set[anchor][env1]))
-    print(f'achor:',anchor,f'env {env0}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env0] if j < len(memory_images.imgs)].count(0), 
+    print(len(env_ref_set[anchor][env0]), len(env_ref_set[anchor][env1]), len([j for j in range(len(memory_images.imgs)) if \
+        memory_images.imgs[j][1] // 2 == anchor]))
+    print(f'anchor:',anchor,f'env {env0}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env0] if j < len(memory_images.imgs)].count(0), 
         f'env {env1}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env1] if j < len(memory_images.imgs)].count(1))
     return
 
