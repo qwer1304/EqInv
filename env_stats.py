@@ -111,10 +111,10 @@ def main(args):
     #print(4, 'Color 0:', count_c0_a0, 'Color 1:', count_c1_a0, 'Sum - # samples:', count_c0_a0 + count_c1_a0 - len(memory_images))
 
     anchor = 1
-    #print(f'-----------ANCHOR {anchor}------------')
+    print(f'-----------ANCHOR {anchor}------------')
     # sum of numbers of samples in env0 + env1 vs number of "other" samples
-    #print(5, f'anchor {anchor}:', 'env0 + env1:', len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
-    #    'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
+    print(5, f'anchor {anchor}:', 'env0 + env1:', len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
+        'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
     # number of samples with colors 0/1 in env0 and env1 and their sum
     count_c0_o = [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env0]].count(0) + \
@@ -129,23 +129,23 @@ def main(args):
     count_c1_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(1)
 
     # number of samples with colors 0/1 in env0 and env1 and their sum
-    #print(6, f'anchor {anchor}:',f'env {env0}:', count_c0_o, f'env {env1}:', count_c1_o, \
-    #    'total other by color:', count_c0_o + count_c1_o, \
-    #    'total other by label:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
+    print(6, f'anchor {anchor}:',f'env {env0}:', count_c0_o, f'env {env1}:', count_c1_o, \
+        'total other by color:', count_c0_o + count_c1_o, \
+        'total other by label:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
     # number of anchor samples with colors 0/1 and their sum
-    #print(7, f'anchor {anchor}:', count_c0_a, count_c1_a, \
-    #    'total anchor by color:', count_c0_a + count_c1_a, \
-    #    'total anchor by label:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]))
+    print(7, f'anchor {anchor}:', count_c0_a, count_c1_a, \
+        'total anchor by color:', count_c0_a + count_c1_a, \
+        'total anchor by label:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]))
     
     # total number of samples of different colors for anchor
     count_c0_a1 = count_c0_a + count_c0_o
     count_c1_a1 = count_c1_a + count_c1_o
-    #print(8, 'Color 0:', count_c0_a1, 'Color 1:', count_c1_a1, 'Sum - # samples:', count_c0_a1 + count_c1_a1 - len(memory_images))
+    print(8, 'Color 0:', count_c0_a1, 'Color 1:', count_c1_a1, 'Sum - # samples:', count_c0_a1 + count_c1_a1 - len(memory_images))
     
     # total number of samples
-    #print(f'-----------Total number of samples------------')
-    #print(9, 'Total by color:', (count_c0_a0 + count_c0_a1 + count_c1_a0 + count_c1_a1) / 2, 'Total # samples:', len(memory_images))
+    print(f'-----------Total number of samples------------')
+    print(9, 'Total by color:', (count_c0_a0 + count_c0_a1 + count_c1_a0 + count_c1_a1) / 2, 'Total # samples:', len(memory_images))
     
     R = 0
     G = 1
