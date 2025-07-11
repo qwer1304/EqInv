@@ -80,8 +80,8 @@ def main(args):
     anchor = 0
     print(f'-----------ANCHOR {anchor}------------')
     # sum of numbers of samples in env0 + env1 vs number of "other" samples
-    print(1, f'anchor {anchor}:', 'env0 + env1:', len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
-        'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
+    #print(1, f'anchor {anchor}:', 'env0 + env1:', len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
+    #    'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
     # number of samples with colors 0/1 in env0 and env1 and their sum
     count_c0_o = [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env0]].count(0)
@@ -100,13 +100,13 @@ def main(args):
     # total number of samples of different colors for anchor
     count_c0_a0 = count_c0_a + count_c0_o
     count_c1_a0 = count_c1_a + count_c1_o
-    print(4, count_c0_a0, count_c1_a0)
+    print(4, count_c0_a0, count_c1_a0, count_c0_a0 + count_c1_a0 - len(memory_images))
 
     anchor = 1
     print(f'-----------ANCHOR {anchor}------------')
     # sum of numbers of samples in env0 + env1 vs number of "other" samples
-    print(5, f'anchor {anchor}:', 'env0 + env1:', len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
-        'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
+    #print(5, f'anchor {anchor}:', 'env0 + env1:', len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
+    #    'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
     # number of samples with colors 0/1 in env0 and env1 and their sum
     count_c0_o = [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env0]].count(0)
@@ -125,7 +125,7 @@ def main(args):
     # total number of samples of different colors for anchor
     count_c0_a1 = count_c0_a + count_c0_o
     count_c1_a1 = count_c1_a + count_c1_o
-    print(8, count_c0_a1, count_c1_a1)
+    print(8, count_c0_a1, count_c1_a1, count_c0_a1 + count_c1_a1 - len(memory_images))
     
     # total number of samples
     print(f'-----------Total number of samples------------')
