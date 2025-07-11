@@ -12,19 +12,19 @@ def is_notebook():
     try:
         shell = get_ipython().__class__.__name__
         if shell == 'ZMQInteractiveShell':
-            return True  # Jupyter notebook or JupyterLab
+            return True  # Jupyter notebook (Kaggle too!)
         elif shell == 'TerminalInteractiveShell':
             return False  # IPython terminal
         else:
             return False
     except NameError:
-        return False  # Probably standard Python script
+        return False  # Standard script
 
 def is_headless():
     if os.name != "nt":
         return os.environ.get("DISPLAY", "") == ""
     else:
-        return False  # Windows usually has display
+        return False
 
 def setup_backend():
     if is_notebook():
@@ -46,7 +46,7 @@ def setup_backend():
 
     import matplotlib.pyplot as plt
     return plt
-
+    
 # --- Call once at the top of your script ---
 plt = setup_backend()
 
