@@ -72,13 +72,14 @@ def main(args):
     distance between the "other" samples and anchor samples, sorting in descending order the distances and splitting the result 50/50 into
     two environments.
     """
-    print(len(env_ref_set[1][0]), len(env_ref_set[1][1]))
     env0 = 0
     env1 = 1
     anchor = 0
+    print(len(env_ref_set[anchor][env0]), len(env_ref_set[anchor][env1]))
     print(f'achor:',anchor,f'env {env0}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env0] if j < len(memory_images.imgs)].count(0), 
         f'env {env1}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env1] if j < len(memory_images.imgs)].count(1))
     anchor = 1
+    print(len(env_ref_set[anchor][env0]), len(env_ref_set[anchor][env1]))
     print(f'achor:',anchor,f'env {env0}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env0] if j < len(memory_images.imgs)].count(0), 
         f'env {env1}:',[memory_images.imgs[j][1] // 2 for j in env_ref_set[anchor][env1] if j < len(memory_images.imgs)].count(1))
     return
