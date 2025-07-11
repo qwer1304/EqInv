@@ -35,7 +35,7 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
 
     env_set = {}
     for anchor_class_ in anchor_class_set:
-        print('\rcosine distance to anchor class {}'.format(anchor_class_), end='')
+        print('\rcosine distance to anchor class {}'.format(anchor_class_)) #, end='')
         anchor_mask = feature_labels_digit == anchor_class_
         candidate_mask = ~anchor_mask
 
