@@ -62,7 +62,7 @@ def main(args):
     env_ref_set = torch.load(fp)
     data = './data/DataSets/CMNIST_wcolor/64'
     memory_images = utils.Imagenet_idx(root=data + '/train', transform=None, target_transform=None)
-    num_samples = len(memory_images.imgs)
+    num_samples = len(memory_images)
     all_idx = list(range(num_samples))
 
     """
@@ -147,14 +147,12 @@ def main(args):
     print(f'-----------Total number of samples------------')
     print(9, 'Total by color:', (count_c0_a0 + count_c0_a1 + count_c1_a0 + count_c1_a1) / 2, 'Total # samples:', len(memory_images))
 
-    return
-
-    for k, indeces in env_ref_set.items():
+    for k, indeces in env_ref_set.items(): # over anchors, indeces is a tuple
         fig, ax = plt.subplots(1, 2, figsize=(2*5, 4))
-        env0_n, env1_n = indeces[0].tolist(), indeces[1].tolist()
-        env_a = list(set(all_idx) - set(env0_n) - set(env1_n))
-        env0_n = [x for x in env0_n if x < num_samples]
-        env1_n = [x for x in env1_n if x < num_samples]
+        env0_n, env1_n = indeces[0].tolist(), indeces[1].tolist() # "other" samples split between environments
+        env_a = list(set(all_idx) - set(env0_n) - set(env1_n)) # anchor samples
+        #env0_n = [x for x in env0_n if x < num_samples]
+        #env1_n = [x for x in env1_n if x < num_samples]
 
         i = 0
         col_env0, col_env1 = [memory_images.imgs[j][1] // 2 for j in env0_n], [memory_images.imgs[j][1] // 2 for j in env1_n]
