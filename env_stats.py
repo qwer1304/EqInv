@@ -146,41 +146,39 @@ def main(args):
     # total number of samples
     print(f'-----------Total number of samples------------')
     print(9, 'Total by color:', (count_c0_a0 + count_c0_a1 + count_c1_a0 + count_c1_a1) / 2, 'Total # samples:', len(memory_images))
+    R = 0
+    G = 1
 
     for k, indeces in env_ref_set.items(): # over anchors, indeces is a tuple
         fig, ax = plt.subplots(1, 2, figsize=(2*5, 4))
-        env0_n, env1_n = indeces[0].tolist(), indeces[1].tolist() # "other" samples split between environments
-        env_a = list(set(all_idx) - set(env0_n) - set(env1_n)) # anchor samples
-        #env0_n = [x for x in env0_n if x < num_samples]
-        #env1_n = [x for x in env1_n if x < num_samples]
+        env_n = [indeces[0].tolist(), indeces[1].tolist()] # "other" samples split between environments
+        env_a = list(set(all_idx) - set(env_n[0]) - set(env_n[1])) # anchor samples
 
         i = 0
-        col_env0, col_env1 = [memory_images.imgs[j][1] // 2 for j in env0_n], [memory_images.imgs[j][1] // 2 for j in env1_n]
+        env_cols = np.zeros((2, 2), dtype=int) # (env, col)
 
-        total_0 = len(col_env0)
-        total_1 = len(col_env1)
-        counts_0 = [col_env0.count(0), col_env0.count(1)]
-        counts_1 = [col_env1.count(0), col_env1.count(1)]
-        perc_0 = [count / total_0 * 100 for count in counts_0]
-        perc_1 = [count / total_1 * 100 for count in counts_1]
+        for e in range(2):
+            env_col[e] = np.array(sum([j // 2 == R for j in env_n[e]]), sum([j // 2 == G for j in env_n[e]]))
+
+        perc = env_col / env_col.sum(axis=0, keepdims=True) # (col,)
 
         labels = ['R', 'G']
         x = np.arange(len(labels))
         width = 0.35
         colors_hatches = ['red', 'lime']
         if hatches_linewidth_supported:
-            bar = ax[i].bar(x - width/2, perc_0, width, label='env_0', hatch="x", color='lightsteelblue', hatch_linewidth=3.0)
+            bar = ax[i].bar(x - width/2, perc[R], width, label='env_0', hatch="x", color='lightsteelblue', hatch_linewidth=3.0)
         else:
-            bar = ax[i].bar(x - width/2, perc_0, width, label='env_0', hatch="x", color='lightsteelblue')
+            bar = ax[i].bar(x - width/2, perc[R], width, label='env_0', hatch="x", color='lightsteelblue')
 
         for j, bc in enumerate(bar):
             bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
             bc.stale = True
 
         if hatches_linewidth_supported:
-            bar = ax[i].bar(x + width/2, perc_1, width, label='env_1', hatch="x", color='orange', hatch_linewidth=3.)
+            bar = ax[i].bar(x + width/2, perc[G], width, label='env_1', hatch="x", color='orange', hatch_linewidth=3.)
         else:
-            bar = ax[i].bar(x + width/2, perc_1, width, label='env_1', hatch="x", color='orange')
+            bar = ax[i].bar(x + width/2, perc[G], width, label='env_1', hatch="x", color='orange')
 
         for j, bc in enumerate(bar):
             bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
@@ -194,13 +192,14 @@ def main(args):
         ax[i].legend()
         ax[i].grid(True)
 
+        """
         i += 1
         col_a = [memory_images.imgs[j][1] // 2 for j in env_a]
 
         total_a = len(col_a)
-        counts_a = [col_a.count(0), col_a.count(1)]
+        counts_a = [col_a.count(R), col_a.count(G)]
         perc_a = [count / total_a * 100 for count in counts_a]
-        perc_tot = [(counts_a[i] + counts_0[i] + counts_1[i]) / (total_a + total_0 + total_1) * 100 for i in range(len(counts_a)) ]
+        perc_tot = [(counts_a[j] + col_tar[j].sum() + col_tar[j].sum()) / (total_a + total_0 + total_1) * 100 for j in range(len(counts_a)) ]
 
         labels = ['R', 'G']
         x = np.arange(len(labels))
@@ -218,6 +217,7 @@ def main(args):
         ax[i].set_xticklabels(labels)
         ax[i].legend()  
         ax[i].grid(True)
+        """
 
         # How to handle final display or saving
         if is_notebook():

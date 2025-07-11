@@ -39,7 +39,9 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
         anchor_mask = feature_labels_digit == anchor_class_
         candidate_mask = ~anchor_mask
 
+        # (D,Na)
         anchor_feature, anchor_idx = feature_bank[:, anchor_mask], idx_bank[anchor_mask]
+        # (Nc,D)
         candidate_feature = feature_bank[:, candidate_mask].t()
         candidate_labels_digit = feature_labels_digit[candidate_mask]
 
@@ -47,11 +49,11 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
         sim_all = []
         candidate_dataloader = data.DataLoader(SampleFeature(candidate_feature), batch_size=1024, shuffle=False, num_workers=0)
         for candidate_feature_batch in candidate_dataloader:
-            sim_matrix = torch.mm(candidate_feature_batch, anchor_feature)
+            sim_matrix = torch.mm(candidate_feature_batch, anchor_feature) # (Nc,Na)
             # sim_matrix = (sim_matrix / temperature).exp()
             sim_batch = sim_matrix.mean(dim=-1)
             sim_all.append(sim_batch)
-        sim_all = torch.cat(sim_all, dim=0).contiguous()
+        sim_all = torch.cat(sim_all, dim=0).contiguous() # (Nc, Na)
 
 
         if class_debias_logits: # calculate a class-wise debias logits to remove the digits similarity effect
@@ -61,11 +63,14 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
                     class_debias_logits_weight[iii] = 1.
                     continue
                 find_idx = torch.where(candidate_labels_digit == iii)[0]
+                # Returns the mean value of all elements in the input tensor.
+                # Mean similarity score across class k for all candidates in that class and all positive samples
                 class_debias_logits_weight[iii] = sim_all[find_idx].mean()
-            sim_all_debias_logits = class_debias_logits_weight[candidate_labels_digit]
+            sim_all_debias_logits = class_debias_logits_weight[candidate_labels_digit] # mean for each class k
             sim_all -= sim_all_debias_logits
 
 
+        # Returns the indices that sort a tensor along a given dimension (-1) in descending order by value.
         sim_sort = torch.argsort(sim_all, descending=True)
         sim_sort = sim_sort.to(candidate_mask.device)
         candidate_idx_sort = idx_bank[candidate_mask][sim_sort]
