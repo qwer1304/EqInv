@@ -78,7 +78,7 @@ def main(args):
     env1 = 1
 
     anchor = 0
-    print(f'-----------ANCHOR {anchor}------------')
+    #print(f'-----------ANCHOR {anchor}------------')
     # sum of numbers of samples in env0 + env1 vs number of "other" samples
     #print(1, f'anchor {anchor}:', 'env0 + env1:', len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
     #    'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
@@ -150,14 +150,13 @@ def main(args):
     R = 0
     G = 1
 
-    fig, ax = plt.subplots(1, 2, figsize=(2*5, 4))
     for k, indeces in env_ref_set.items(): # over anchors, indeces is a tuple
-        #ax = [ax]
+        fig, ax = plt.subplots(1, 1, figsize=(1*5, 4))
+        ax = [ax]
         env_n = [indeces[0].tolist(), indeces[1].tolist()] # "other" samples split between environments
         env_a = list(set(all_idx) - set(env_n[0]) - set(env_n[1])) # anchor samples
 
-        #i = 0
-        i = k
+        i = 0
         env_col = np.zeros((len(env_ref_set), 2), dtype=int) # (env, col)
 
         for e in range(env_col.shape[0]):
@@ -172,7 +171,6 @@ def main(args):
         x = np.arange(len(labels))
         width = 0.35
         colors_hatches = ['red', 'lime']
-        print(i, k, perc)
         if hatches_linewidth_supported:
             bar = ax[i].bar(x - width/2, perc[0], width, label='env_0', hatch="x", color='lightsteelblue', hatch_linewidth=3.0)
         else:
@@ -238,12 +236,12 @@ def main(args):
             plt.show(block = k == len(env_ref_set)-1)
 
         idxs = env_n[0] + env_a
-        col0 = [memory_images.imgs[j][1] // 2 for j in idxs]
-        tar0 = [memory_images.imgs[j][1] % 2 for j in idxs]
+        col0 = [memory_images.imgs[j][label] // 2 for j in idxs]
+        tar0 = [memory_images.imgs[j][label] % 2 for j in idxs]
         corr0 = np.corrcoef(np.array(col0), np.array(tar0))
         idxs = env_n[1] + env_a
-        col1 = [memory_images.imgs[j][1] // 2 for j in idxs]
-        tar1 = [memory_images.imgs[j][1] % 2 for j in idxs]
+        col1 = [memory_images.imgs[j][label] // 2 for j in idxs]
+        tar1 = [memory_images.imgs[j][label] % 2 for j in idxs]
         corr1 = np.corrcoef(np.array(col1), np.array(tar1))
         print("Color/Label correlations:", "env 0:", corr0[0,1], "env 1:", corr1[0,1])
 
@@ -255,9 +253,9 @@ def main(args):
     num_vals = len(val_images)
     num_test = len(test_images)
 
-    col_train, tar_train = [train_images.imgs[j][1] // 2 for j in range(num_train)], [train_images.imgs[j][1] % 2 for j in range(num_train)]
-    col_val, tar_val = [val_images.imgs[j][1] // 2 for j in range(num_vals)], [val_images.imgs[j][1] % 2 for j in range(num_vals)]
-    col_test, tar_test = [test_images.imgs[j][1] // 2 for j in range(num_test)], [test_images.imgs[j][1] % 2 for j in range(num_test)]
+    col_train, tar_train = [train_images.imgs[j][label] // 2 for j in range(num_train)], [train_images.imgs[j][label] % 2 for j in range(num_train)]
+    col_val, tar_val = [val_images.imgs[j][label] // 2 for j in range(num_vals)], [val_images.imgs[j][label] % 2 for j in range(num_vals)]
+    col_test, tar_test = [test_images.imgs[j][label] // 2 for j in range(num_test)], [test_images.imgs[j][label] % 2 for j in range(num_test)]
     corr_train = np.corrcoef(np.array(col_train), np.array(tar_train))
     corr_val = np.corrcoef(np.array(col_val), np.array(tar_val))
     corr_test = np.corrcoef(np.array(col_test), np.array(tar_test))
