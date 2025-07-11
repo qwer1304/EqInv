@@ -324,6 +324,7 @@ def main():
         os.makedirs(os.path.dirname(fp), exist_ok=True)
         torch.save(env_ref_set, fp)
         if args.only_cluster:
+            print(f'Cluster {fp} ready!') 
             return
     else:
         env_ref_set = torch.load(fp)
