@@ -233,11 +233,11 @@ def main(args):
         else:
             plt.show(block = k == len(env_ref_set)-1)
 
-        idxs = env0_n + env_a
+        idxs = env_n[0] + env_a
         col0 = [memory_images.imgs[j][1] // 2 for j in idxs]
         tar0 = [memory_images.imgs[j][1] % 2 for j in idxs]
         corr0 = np.corrcoef(np.array(col0), np.array(tar0))
-        idxs = env1_n + env_a
+        idxs = env_n[1] + env_a
         col1 = [memory_images.imgs[j][1] // 2 for j in idxs]
         tar1 = [memory_images.imgs[j][1] % 2 for j in idxs]
         corr1 = np.corrcoef(np.array(col1), np.array(tar1))
