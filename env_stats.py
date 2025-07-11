@@ -108,7 +108,7 @@ def main(args):
     # total number of samples of different colors for anchor
     count_c0_a0 = count_c0_a + count_c0_o
     count_c1_a0 = count_c1_a + count_c1_o
-    print(4, 'Color 0:', count_c0_a0, 'Color 1:', count_c1_a0, 'Sum - # samples:', count_c0_a0 + count_c1_a0 - len(memory_images))
+    #print(4, 'Color 0:', count_c0_a0, 'Color 1:', count_c1_a0, 'Sum - # samples:', count_c0_a0 + count_c1_a0 - len(memory_images))
 
     anchor = 1
     print(f'-----------ANCHOR {anchor}------------')
@@ -141,11 +141,11 @@ def main(args):
     # total number of samples of different colors for anchor
     count_c0_a1 = count_c0_a + count_c0_o
     count_c1_a1 = count_c1_a + count_c1_o
-    print(8, 'Color 0:', count_c0_a1, 'Color 1:', count_c1_a1, 'Sum - # samples:', count_c0_a1 + count_c1_a1 - len(memory_images))
+    #print(8, 'Color 0:', count_c0_a1, 'Color 1:', count_c1_a1, 'Sum - # samples:', count_c0_a1 + count_c1_a1 - len(memory_images))
     
     # total number of samples
     print(f'-----------Total number of samples------------')
-    print(9, count_c0_a0 + count_c0_a1 + count_c1_a0 + count_c1_a1, len(memory_images))
+    print(9, count_c0_a0 + count_c0_a1 + count_c1_a0 + count_c1_a1, 2*len(memory_images))
 
     return
 
