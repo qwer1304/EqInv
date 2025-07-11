@@ -159,8 +159,8 @@ def main(args):
 
         for e in range(2):
             env_col[e] = np.array([
-                sum([j // 2 == R for j in env_n[e]]),
-                sum([j // 2 == G for j in env_n[e]])
+                sum([memory_images.imgs[j][label] // 2 == R for j in env_n[e]]),
+                sum([memory_images.imgs[j][label] // 2 == G for j in env_n[e]])
             ])
 
         perc = env_col / env_col.sum(axis=0, keepdims=True) # (env, col)
