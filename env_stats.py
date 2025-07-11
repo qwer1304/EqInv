@@ -172,6 +172,7 @@ def main(args):
         x = np.arange(len(labels))
         width = 0.35
         colors_hatches = ['red', 'lime']
+        print(i, k, perc)
         if hatches_linewidth_supported:
             bar = ax[i].bar(x - width/2, perc[0], width, label='env_0', hatch="x", color='lightsteelblue', hatch_linewidth=3.0)
         else:
