@@ -323,7 +323,7 @@ def main():
         env_ref_set = utils_cluster.cal_cosine_distance(model, memory_loader, args.class_num, temperature=0.1, anchor_class=None, class_debias_logits=True)
         os.makedirs(os.path.dirname(fp), exist_ok=True)
         torch.save(env_ref_set, fp)
-        if args,only_cluster:
+        if args.only_cluster:
             return
     else:
         env_ref_set = torch.load(fp)
