@@ -78,34 +78,55 @@ def main(args):
     env1 = 1
 
     anchor = 0
-    print(f'anchor {anchor}:', 'env0 + env1:',len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
-        # total of "other"
+    # sum of numbers of samples in env0 + env1 vs number of "other" samples
+    print(f'anchor {anchor}:', 'env0 + env1:', len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
         'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
+    # number of samples with colors 0/1 in env0 and env1 and their sum
     count_c0_o = [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env0]].count(0)
     count_c1_o = [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env1]].count(1)
-    indx_a = [j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]
 
+    # number of anchor samples
+    indx_a = [j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]
+    # number of anchor samples with colors 0/1 and their sum
     count_c0_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(0)
     count_c1_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(1)
-    print(f'anchor:',anchor,f'env {env0}:', count_c0_o, f'env {env1}:', count_c1_o, 'total:', count_c0_o + count_c1_o)
-    print(f'anchor:',anchor, count_c0_a, count_c1_a, 'total:', count_c0_a + count_c1_a)
-    print(count_c0_a + count_c1_a + count_c0_o + count_c1_o)
+
+    # number of samples with colors 0/1 in env0 and env1 and their sum
+    print(f'anchor {anchor}:',f'env {env0}:', count_c0_o, f'env {env1}:', count_c1_o, 'total:', count_c0_o + count_c1_o)
+    # number of anchor samples with colors 0/1 and their sum
+    print(f'anchor {anchor}:', count_c0_a, count_c1_a, 'total:', count_c0_a + count_c1_a)
+    # total number of samples of different colors for anchor
+    count_c0_a0 = count_c0_a + count_c0_o
+    count_c1_a0 = count_c1_a + count_c1_o
+    print(count_c0_a0, count_c1_a0)
 
     anchor = 1
-    print(f'anchor {anchor}:', 'env0 + env1:',len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
-        # total of "other"
+    # sum of numbers of samples in env0 + env1 vs number of "other" samples
+    print(f'anchor {anchor}:', 'env0 + env1:', len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
         'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
+    # number of samples with colors 0/1 in env0 and env1 and their sum
     count_c0_o = [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env0]].count(0)
     count_c1_o = [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env1]].count(1)
-    indx_a = [j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]
 
+    # number of anchor samples
+    indx_a = [j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]
+    # number of anchor samples with colors 0/1 and their sum
     count_c0_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(0)
     count_c1_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(1)
-    print(f'anchor:',anchor,f'env {env0}:', count_c0_o, f'env {env1}:', count_c1_o, 'total:', count_c0_o + count_c1_o)
-    print(f'anchor:',anchor, count_c0_a, count_c1_a, 'total:', count_c0_a + count_c1_a)
-    print(count_c0_a + count_c1_a + count_c0_o + count_c1_o)
+
+    # number of samples with colors 0/1 in env0 and env1 and their sum
+    print(f'anchor {anchor}:',f'env {env0}:', count_c0_o, f'env {env1}:', count_c1_o, 'total:', count_c0_o + count_c1_o)
+    # number of anchor samples with colors 0/1 and their sum
+    print(f'anchor {anchor}:', count_c0_a, count_c1_a, 'total:', count_c0_a + count_c1_a)
+    # total number of samples of different colors for anchor
+    count_c0_a1 = count_c0_a + count_c0_o
+    count_c1_a1 = count_c1_a + count_c1_o
+    print(count_c0_a1, count_c1_a1)
+    
+    # total number of samples
+    print(count_c0_a0 + count_c0_a1 + count_c1_a0 + count_c1_a1, len(memory_images))
 
     return
 
