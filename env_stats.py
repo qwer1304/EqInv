@@ -78,8 +78,9 @@ def main(args):
     env1 = 1
 
     anchor = 0
+    print(f'-----------ANCHOR {anchor}------------')
     # sum of numbers of samples in env0 + env1 vs number of "other" samples
-    print(f'anchor {anchor}:', 'env0 + env1:', len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
+    print(1, f'anchor {anchor}:', 'env0 + env1:', len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
         'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
     # number of samples with colors 0/1 in env0 and env1 and their sum
@@ -93,17 +94,18 @@ def main(args):
     count_c1_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(1)
 
     # number of samples with colors 0/1 in env0 and env1 and their sum
-    print(f'anchor {anchor}:',f'env {env0}:', count_c0_o, f'env {env1}:', count_c1_o, 'total:', count_c0_o + count_c1_o)
+    print(2, f'anchor {anchor}:',f'env {env0}:', count_c0_o, f'env {env1}:', count_c1_o, 'total:', count_c0_o + count_c1_o)
     # number of anchor samples with colors 0/1 and their sum
-    print(f'anchor {anchor}:', count_c0_a, count_c1_a, 'total:', count_c0_a + count_c1_a)
+    print(3, f'anchor {anchor}:', count_c0_a, count_c1_a, 'total:', count_c0_a + count_c1_a)
     # total number of samples of different colors for anchor
     count_c0_a0 = count_c0_a + count_c0_o
     count_c1_a0 = count_c1_a + count_c1_o
-    print(count_c0_a0, count_c1_a0)
+    print(4, count_c0_a0, count_c1_a0)
 
     anchor = 1
+    print(f'-----------ANCHOR {anchor}------------')
     # sum of numbers of samples in env0 + env1 vs number of "other" samples
-    print(f'anchor {anchor}:', 'env0 + env1:', len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
+    print(5, f'anchor {anchor}:', 'env0 + env1:', len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
         'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
     # number of samples with colors 0/1 in env0 and env1 and their sum
@@ -117,16 +119,17 @@ def main(args):
     count_c1_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(1)
 
     # number of samples with colors 0/1 in env0 and env1 and their sum
-    print(f'anchor {anchor}:',f'env {env0}:', count_c0_o, f'env {env1}:', count_c1_o, 'total:', count_c0_o + count_c1_o)
+    print(6, f'anchor {anchor}:',f'env {env0}:', count_c0_o, f'env {env1}:', count_c1_o, 'total:', count_c0_o + count_c1_o)
     # number of anchor samples with colors 0/1 and their sum
-    print(f'anchor {anchor}:', count_c0_a, count_c1_a, 'total:', count_c0_a + count_c1_a)
+    print(7, f'anchor {anchor}:', count_c0_a, count_c1_a, 'total:', count_c0_a + count_c1_a)
     # total number of samples of different colors for anchor
     count_c0_a1 = count_c0_a + count_c0_o
     count_c1_a1 = count_c1_a + count_c1_o
-    print(count_c0_a1, count_c1_a1)
+    print(8, count_c0_a1, count_c1_a1)
     
     # total number of samples
-    print(count_c0_a0 + count_c0_a1 + count_c1_a0 + count_c1_a1, len(memory_images))
+    print(f'-----------Total number of samples------------')
+    print(9, count_c0_a0 + count_c0_a1 + count_c1_a0 + count_c1_a1, len(memory_images))
 
     return
 
