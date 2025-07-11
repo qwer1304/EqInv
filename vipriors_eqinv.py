@@ -101,6 +101,9 @@ parser.add_argument('--target_transform', type=str, default=None, help='a functi
 # space between columns
 parser.add_argument('--spaces', type=int, default=4, help='spaces between entries in progress print (instead of tab)')
 
+# do only clustering
+parser.add_argument('--only_cluster', action="store_true", default=False, help='only do clustering')
+
 args = parser.parse_args()
 
 best_acc1 = 0
@@ -311,14 +314,17 @@ def main():
 
     #### Process Cluster
     assert args.stage1_model == 'ipirm'
+    # number of images per class when training ip-irm
     assert args.num_shot in ['10', '20', '50']
 
     fp = 'misc/env_ref_set_vipriors{}_rn50_{}_pretrained'.format(args.num_shot, args.stage1_model)
-    if not os.path.exists(fp):
+    if args.only_cluster or not os.path.exists(fp):
         print('no cluster file, thus first process...')
         env_ref_set = utils_cluster.cal_cosine_distance(model, memory_loader, args.class_num, temperature=0.1, anchor_class=None, class_debias_logits=True)
-        os.makedirs(os.path.dirname(fp), exist_ok=False)
+        os.makedirs(os.path.dirname(fp), exist_ok=True)
         torch.save(env_ref_set, fp)
+        if args,only_cluster:
+            return
     else:
         env_ref_set = torch.load(fp)
 
