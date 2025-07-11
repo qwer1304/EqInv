@@ -319,7 +319,10 @@ def main():
 
     fp = 'misc/env_ref_set_vipriors{}_rn50_{}_pretrained'.format(args.num_shot, args.stage1_model)
     if args.only_cluster or not os.path.exists(fp):
-        print('no cluster file, thus first process...')
+        if args.only_cluster:
+            print('Recalculation of cluster file requested...')
+        else:
+            print('no cluster file, thus first process...')
         env_ref_set = utils_cluster.cal_cosine_distance(model, memory_loader, args.class_num, temperature=0.1, anchor_class=None, class_debias_logits=True)
         os.makedirs(os.path.dirname(fp), exist_ok=True)
         torch.save(env_ref_set, fp)

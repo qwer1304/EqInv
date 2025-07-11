@@ -13,6 +13,7 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
     with torch.no_grad():
         # generate feature bank
         for images, target, images_idx in tqdm(memory_data_loader, desc='Feature extracting'):
+            print(target)
             images = images.cuda(non_blocking=True)
             feature = net(images, return_feature=True)
             if mask is not None:
@@ -35,7 +36,7 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
 
     env_set = {}
     for anchor_class_ in anchor_class_set:
-        print('\rcosine distance to anchor class {}'.format(anchor_class_)) #, end='')
+        print('cosine distance to anchor class {}'.format(anchor_class_)) #, end='')
         anchor_mask = feature_labels_digit == anchor_class_
         candidate_mask = ~anchor_mask
 
@@ -75,9 +76,9 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
 
         env_set[anchor_class_] = torch.chunk(candidate_idx_sort, 2) # 2 environments
         assert len(env_set[anchor_class_][0]) + len(env_set[anchor_class_][1]) == len(candidate_idx_sort), 'Other samples lost'
-        print(len(memory_data_loader), len(anchor_mask), len(candidate_dataloader))
-        assert len(memory_data_loader) == (len(anchor_mask) + len(candidate_dataloader)), 'Some samples lost 1'
-        assert len(memory_data_loader) == (len(anchor_mask) + len(candidate_idx_sort)), 'Some samples lost 2'
+        print(len(memory_data_loader), anchor_mask.sum(), len(candidate_dataloader))
+        assert len(memory_data_loader) == (anchor_mask.sum() + len(candidate_dataloader)), 'Some samples lost 1'
+        assert len(memory_data_loader) == (anchor_mask.sum() + len(candidate_idx_sort)), 'Some samples lost 2'
 
     return env_set
 
