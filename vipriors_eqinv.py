@@ -516,7 +516,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
 def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
     batch_time = AverageMeter('Time', ':6.3f', Summary.NONE)
     losses = AverageMeter('Loss', ':.4e', Summary.NONE)
-    top1 = AverageMeter('Acc@1', ':6.2f', Summary.AVERAGE)
+    top1 = AverageMeter('Acc@1', ':6.2f', Summary.AVERAGE, debug=True)
     top5 = AverageMeter('Acc@5', ':6.2f', Summary.AVERAGE)
     progress = ProgressMeter(
         len(val_loader),
@@ -573,10 +573,11 @@ class Summary(Enum):
 class AverageMeter(object):
     """Computes and stores the average and current value"""
 
-    def __init__(self, name, fmt=':f', summary_type=Summary.AVERAGE):
+    def __init__(self, name, fmt=':f', summary_type=Summary.AVERAGE, debug=False):
         self.name = name
         self.fmt = fmt
         self.summary_type = summary_type
+        self.debug = debug
         self.reset()
 
     def reset(self):
@@ -586,10 +587,18 @@ class AverageMeter(object):
         self.count = 0
 
     def update(self, val, n=1):
+        prev_val = self.val
+        prev_sum = self.sum
+        prev_count = self.count
+        prev_avg = self.avg
         self.val = val
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+        if self.debug:
+            print(f'val: {val}, n: {n}')
+            print('prevs:',"val: {}, sum: {}, count: {}, avg: {}".format((prev_val, prev_sum, prev_count, prev_avg)))
+            print('curr:',"val: {}, sum: {}, count: {}, avg: {}".format((self.val, self.sum, self.count, self.avg)))
 
     def __str__(self):
         fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
