@@ -125,8 +125,12 @@ class Net(nn.Module):
         if os.path.isfile(pretrained_path):
             print("=> loading checkpoint '{}'".format(pretrained_path))
             checkpoint = torch.load(pretrained_path, map_location="cpu")
-            # state_dict = checkpoint['state_dict']
-            msg = model.load_state_dict(checkpoint, strict=False)
+            _, ext = os.path.splitext(pretrained_path)
+            if ext == 'tar':
+                state_dict = checkpoint['state_dict']
+            else:
+                state_dict = checkpoint
+            msg = model.load_state_dict(state_dict, strict=False)
             print(msg)
         else:
             print("=> no checkpoint found at '{}'".format(pretrained_path))
