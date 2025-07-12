@@ -126,7 +126,7 @@ class Net(nn.Module):
             print("=> loading checkpoint '{}'".format(pretrained_path))
             checkpoint = torch.load(pretrained_path, map_location="cpu")
             _, ext = os.path.splitext(pretrained_path)
-            if ext == 'tar':
+            if ext == '.tar':
                 state_dict = checkpoint['state_dict']
             else:
                 state_dict = checkpoint
