@@ -241,7 +241,7 @@ def main():
     ft_fc = copy.deepcopy(model_base.fc)
     model_base.fc = nn.Identity()
 
-    mask_layer = torch.rand(ft_fc.weight.size(1),)
+    mask_layer = torch.rand(ft_fc.weight.size(1),device="cuda")
     model = utils.ResNet_ft_eqinv(model_base, ft_fc, mask_layer=mask_layer, args=args)
     model = torch.nn.DataParallel(model).cuda()
 
