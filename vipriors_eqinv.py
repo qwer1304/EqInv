@@ -623,8 +623,8 @@ class AverageMeter(object):
         prev_count = self.ccount
         prev_avg = self.avg
         self.val = val
-        self.ssum += val * n
-        self.ccount += n
+        self.ssum = prev_sum + val * n
+        self.ccount = prev_count + n
         self.avg = self.ssum / self.ccount
         if self.debug:
             print(f'val: {val}, n: {n}')
