@@ -142,7 +142,7 @@ class ResNet_ft_eqinv(nn.Module):
             return feature
 
         if self.mask_layer is not None:
-            print(feature.device, self.scaler.device)
+            print(feature.device, self.mask_layer.device)
             masked_feature_erm = F.normalize(self.activation_map.apply(self.mask_layer)*feature, dim=-1) * self.scaler # nomalize for numeral stability
             if self.args.backbone_propagate:
                 masked_feature_inv = F.normalize(self.activation_map.apply(self.mask_layer)*feature, dim=-1) * self.scaler 
