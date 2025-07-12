@@ -597,8 +597,8 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
         if self.debug:
             print(f'val: {val}, n: {n}')
-            print('prevs:',"val: {}, sum: {}, count: {}, avg: {}".format((prev_val, prev_sum, prev_count, prev_avg)))
-            print('curr:',"val: {}, sum: {}, count: {}, avg: {}".format((self.val, self.sum, self.count, self.avg)))
+            print('prevs:',"val: {}, sum: {}, count: {}, avg: {}".format(prev_val, prev_sum, prev_count, prev_avg))
+            print('curr:',"val: {}, sum: {}, count: {}, avg: {}".format(self.val, self.sum, self.count, self.avg))
 
     def __str__(self):
         fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
