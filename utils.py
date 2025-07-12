@@ -142,14 +142,14 @@ class ResNet_ft_eqinv(nn.Module):
             return feature
 
         if self.mask_layer is not None:
-            print("activation_map device:", self.activation_map.apply(self.mask_layer).device)
-            print("feature device:", feature.device)
-            masked_feature_erm = F.normalize(self.activation_map.apply(self.mask_layer)*feature, dim=-1) * self.scaler # nomalize for numeral stability
+            device = feature.device
+            activation = self.activation_map.apply(self.mask_layer).to(device)
+            masked_feature_erm = F.normalize(activation * feature, dim=-1) * self.scaler # nomalize for numeral stability
             if self.args.backbone_propagate:
-                masked_feature_inv = F.normalize(self.activation_map.apply(self.mask_layer)*feature, dim=-1) * self.scaler 
+                masked_feature_inv = F.normalize(activation * feature, dim=-1) * self.scaler 
             else:
                 # invariance loss not backward propagated to backbone, thus detach the feature from masked_feature
-                masked_feature_inv = F.normalize(self.activation_map.apply(self.mask_layer)*feature.detach(), dim=-1) * self.scaler 
+                masked_feature_inv = F.normalize(activation * feature.detach(), dim=-1) * self.scaler 
         else:
             raise NotImplementedError
 
