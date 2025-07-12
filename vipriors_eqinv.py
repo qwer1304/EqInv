@@ -495,8 +495,8 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
         losses.update(loss_erm.item(), images1.size(0)+images2.size(0))
         losses_cont.update(loss_cont.item(), images1.size(0)+images2.size(0))
         losses_inv.update(loss_inv.item(), images1.size(0)+images2.size(0))
-        top1.update(acc1[0], images1.size(0)+images2.size(0))
-        top5.update(acc5[0], images1.size(0)+images2.size(0))
+        top1.update(acc1.item(), images1.size(0)+images2.size(0))
+        top5.update(acc5.item(), images1.size(0)+images2.size(0))
         LR.update(optimizer.param_groups[0]['lr'])
 
         # compute gradient and do SGD step
@@ -542,8 +542,8 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             # measure accuracy and record loss
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
             losses.update(loss.item(), images.size(0))
-            top1.update(acc1[0], images.size(0))
-            top5.update(acc5[0], images.size(0))
+            top1.update(acc1.item(), images.size(0))
+            top5.update(acc5.item(), images.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
@@ -625,11 +625,11 @@ class ProgressMeter(object):
 
 
     def display_summary(self, epoch):
-        entries = [" *"]
+        entries = [" *", "Epoch: [{}]".format(epoch)]
         entries += [meter.summary() for meter in self.meters]
         print(' '.join(entries))
 
-        utils.write_log('Test Epoch {} '.format(epoch) + ' '.join(entries), self.log_file, print_=False)
+        utils.write_log('{} Epoch {} '.format(self.prefix, epoch) + ' '.join(entries), self.log_file, print_=False)
 
     def _get_batch_fmtstr(self, num_batches):
         num_digits = len(str(num_batches // 1))
