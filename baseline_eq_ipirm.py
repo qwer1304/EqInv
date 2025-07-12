@@ -86,6 +86,10 @@ parser.add_argument('--target_transform', type=str, default=None, help='a functi
 # space between columns
 parser.add_argument('--spaces', type=int, default=4, help='spaces between entries in progress print (instead of tab)')
 
+# shuffle validation and test datasets
+parser.add_argument('--val_shuffle', action="store_true", default=False, help='shuffle validation daatase')
+parser.add_argument('--test_shuffle', action="store_true", default=False, help='shuffle test daatase')
+
 args = parser.parse_args()
 
 best_acc1 = 0
@@ -211,14 +215,14 @@ def main():
     target_transform = eval(args.target_transform) if args.target_transform is not None else None
 
     images = utils.Imagenet_idx(root=args.data+'/val', transform=val_transform, target_transform=target_transform)
-    val_loader = torch.utils.data.DataLoader(images, batch_size=args.batch_size, num_workers=args.workers, shuffle=False)
+    val_loader = torch.utils.data.DataLoader(images, batch_size=args.batch_size, num_workers=args.workers, shuffle=args.val_shuffle)
 
 
     # train_images = torchvision.datasets.ImageNet(data_path, split='train', transform=train_tranform)
     train_images = utils.Imagenet_idx(root=args.data+'/train', transform=train_tranform, target_transform=target_transform)
     train_loader = torch.utils.data.DataLoader(train_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=True)
     test_images = utils.Imagenet_idx(root=args.data+'/testgt', transform=val_transform, target_transform=target_transform)
-    test_loader = torch.utils.data.DataLoader(test_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=False)
+    test_loader = torch.utils.data.DataLoader(test_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=args.test_shuffle)
 
     if args.evaluate:
         validate(val_loader, model, criterion, args, epoch=-1, prefix='Val: ')
@@ -288,8 +292,8 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         # measure accuracy and record loss
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         losses.update(loss_all.item(), images.size(0))
-        top1.update(acc1[0], images.size(0))
-        top5.update(acc5[0], images.size(0))
+        top1.update(acc1.item(), images.size(0))
+        top5.update(acc5.item(), images.size(0))
         LR.update(optimizer.param_groups[0]['lr'])
 
         # compute gradient and do SGD step
@@ -335,8 +339,8 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             # measure accuracy and record loss
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
             losses.update(loss.item(), images.size(0))
-            top1.update(acc1[0], images.size(0))
-            top5.update(acc5[0], images.size(0))
+            top1.update(acc1.item(), images.size(0))
+            top5.update(acc5.item(), images.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
@@ -380,8 +384,8 @@ class AverageMeter(object):
 
     def update(self, val, n=1):
         self.val = val
-        self.sum += val * n
-        self.count += n
+        self.sum = self.sum + val * n
+        self.count = self.count + n
         self.avg = self.sum / self.count
 
     def __str__(self):
@@ -418,11 +422,11 @@ class ProgressMeter(object):
 
 
     def display_summary(self, epoch):
-        entries = [" *"]
+        entries = [" *", "Epoch: [{}]".format(epoch)]
         entries += [meter.summary() for meter in self.meters]
         print(' '.join(entries))
 
-        utils.write_log('Test Epoch {} '.format(epoch) + ' '.join(entries), self.log_file, print_=False)
+        utils.write_log('{} Epoch {} '.format(self.prefix, epoch) + ' '.join(entries), self.log_file, print_=False)
 
     def _get_batch_fmtstr(self, num_batches):
         num_digits = len(str(num_batches // 1))
