@@ -581,7 +581,7 @@ class AverageMeter(object):
     @sum.setter
     def sum(self, value):
         if getattr(self, 'name', '') == 'Acc@1_top1':
-            print(f"[{self.name}] sum setter called! Changing sum from {self._sum} to {value}")
+            print(f"[{self.name},{id(self)}] sum setter called! Changing sum from {self._sum} to {value}")
             import inspect
             for line in inspect.stack():
                 print(line.function, line.lineno, line.filename)
@@ -603,7 +603,7 @@ class AverageMeter(object):
 
     def update(self, val, n=1):
         if self.name == "Acc@1_top1":
-            print('Called on top1')
+            print(f"Called on top1: [{self.name},{id(self)}]}")
             import inspect
             for line in inspect.stack():
                 print(line.function, line.lineno, line.filename)
