@@ -104,6 +104,11 @@ parser.add_argument('--spaces', type=int, default=4, help='spaces between entrie
 # do only clustering
 parser.add_argument('--only_cluster', action="store_true", default=False, help='only do clustering')
 
+# shuffle validation and test datasets
+parser.add_argument('--val_shuffle', action="store_true", default=False, help='shuffle validation daatase')
+parser.add_argument('--test_shuffle', action="store_true", default=False, help='shuffle test daatase')
+
+
 args = parser.parse_args()
 
 best_acc1 = 0
@@ -288,9 +293,9 @@ def main():
     target_transform = eval(args.target_transform) if args.target_transform is not None else None
     
     images = utils.Imagenet_idx(root=args.data+'/val', transform=val_transform, target_transform=target_transform)
-    val_loader = torch.utils.data.DataLoader(images, batch_size=args.batch_size, num_workers=args.workers, shuffle=False)
+    val_loader = torch.utils.data.DataLoader(images, batch_size=args.batch_size, num_workers=args.workers, shuffle=args.val_shuffle)
     test_images = utils.Imagenet_idx(root=args.data+'/testgt', transform=val_transform, target_transform=target_transform)
-    test_loader = torch.utils.data.DataLoader(test_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=False)
+    test_loader = torch.utils.data.DataLoader(test_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=args.test_shuffle)
 
     if args.random_aug:
         train_images = utils.Imagenet_idx_pair_transformone(root=args.data + '/train', transform_simple=train_transform, 
