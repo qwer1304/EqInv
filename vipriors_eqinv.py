@@ -200,7 +200,7 @@ class Net(nn.Module):
         if device = 'cuda' if torch.cuda.is_available() else 'cpu'
         if os.path.isfile(pretrained_path):
             print("=> loading checkpoint '{}'".format(pretrained_path))
-            checkpoint = torch.load(pretrained_path), map_location=device)
+            checkpoint = torch.load(pretrained_path, map_location=device)
             _, ext = os.path.splitext(pretrained_path)
             print(ext)
             if ext == '.tar':
