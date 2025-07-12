@@ -574,8 +574,21 @@ class Summary(Enum):
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
+    @property
+    def sum(self):
+        return self._sum
+
+    @sum.setter
+    def sum(self, value):
+        if getattr(self, 'name', '') == 'Acc@1_top1':
+            print(f"[{self.name}] sum setter called! Changing sum from {self._sum} to {value}")
+            import inspect
+            for line in inspect.stack():
+                print(line.function, line.lineno, line.filename)
+        self._sum = value
 
     def __init__(self, name, fmt=':f', summary_type=Summary.AVERAGE, debug=False):
+        self._sum = 0
         self.name = name
         self.fmt = fmt
         self.summary_type = summary_type
