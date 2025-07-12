@@ -588,8 +588,8 @@ class AverageMeter(object):
         self._sum = value
 
     def __init__(self, name, fmt=':f', summary_type=Summary.AVERAGE, debug=False):
-        self._sum = 0
         self.name = name
+        self._sum = 0
         self.fmt = fmt
         self.summary_type = summary_type
         self.debug = debug
