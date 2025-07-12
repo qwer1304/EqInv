@@ -116,16 +116,18 @@ def main(args):
     print(5, f'anchor {anchor}:', 'env0 + env1:', len(env_ref_set[anchor][env0]) + len(env_ref_set[anchor][env1]), \
         'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
-    # number of samples with colors 0/1 in env0 and env1 and their sum
+    # number of samples with colors 0 in env0 and env1
     count_c0_o = [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env0]].count(0) + \
                  [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env1]].count(0)
+    # number of samples with colors 1 in env0 and env1
     count_c1_o = [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env0]].count(1) + \
                  [memory_images.imgs[j][label] // 2 for j in env_ref_set[anchor][env1]].count(1)
 
     # number of anchor samples
     indx_a = [j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]
-    # number of anchor samples with colors 0/1 and their sum
+    # number of anchor samples with colors 0
     count_c0_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(0)
+    # number of anchor samples with colors 1
     count_c1_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(1)
 
     # number of samples with colors 0/1 in env0 and env1 and their sum
