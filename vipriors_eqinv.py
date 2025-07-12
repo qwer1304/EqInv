@@ -310,10 +310,8 @@ def main():
 
 
     if args.evaluate:
-        """
         print('eval on vipriors val data')
         validate(val_loader, model, criterion, args, epoch=-1, prefix='Val: ')
-        """
         print('eval on vipriors test data')
         validate(test_loader, model, criterion, args, epoch=-1, prefix='Test: ')
         return
@@ -518,7 +516,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
 def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
     batch_time = AverageMeter('Time', ':6.3f', Summary.NONE)
     losses = AverageMeter('Loss', ':.4e', Summary.NONE)
-    top1 = AverageMeter('Acc@1_top1', ':6.2f', Summary.AVERAGE, debug=True)
+    top1 = AverageMeter('Acc@1', ':6.2f', Summary.AVERAGE, debug=True)
     top5 = AverageMeter('Acc@5', ':6.2f', Summary.AVERAGE)
     progress = ProgressMeter(
         len(val_loader),
