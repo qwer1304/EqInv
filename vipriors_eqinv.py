@@ -18,8 +18,7 @@ import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
-from collections import defaultdict
-
+from collections import defaultdict, OrderedDict
 
 import utils
 import utils_cluster
