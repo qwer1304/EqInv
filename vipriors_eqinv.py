@@ -199,7 +199,7 @@ class Net(nn.Module):
         model = Model_Imagenet()
         if os.path.isfile(pretrained_path):
             print("=> loading checkpoint '{}'".format(pretrained_path))
-            checkpoint = torch.load(pretrained_path, map_location="cpu")
+            checkpoint = torch.load(pretrained_path) #, map_location="cpu")
             _, ext = os.path.splitext(pretrained_path)
             print(ext)
             if ext == '.tar':
