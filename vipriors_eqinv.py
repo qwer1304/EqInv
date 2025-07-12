@@ -576,7 +576,6 @@ class AverageMeter(object):
         self.name = name
         self.fmt = fmt
         self.summary_type = summary_type
-        self.debug = debug
         self.reset()
 
     def reset(self):
