@@ -602,9 +602,9 @@ class AverageMeter(object):
         elif self.summary_type is Summary.AVERAGE:
             fmtstr = '{name} {avg:.3f}'
         elif self.summary_type is Summary.SUM:
-            fmtstr = '{name} {ssum:.3f}'
+            fmtstr = '{name} {sum:.3f}'
         elif self.summary_type is Summary.COUNT:
-            fmtstr = '{name} {ccount:.3f}'
+            fmtstr = '{name} {count:.3f}'
         else:
             raise ValueError('invalid summary type %r' % self.summary_type)
 
