@@ -603,7 +603,7 @@ class AverageMeter(object):
 
     def update(self, val, n=1):
         if self.name == "Acc@1_top1":
-            print(f"Called on top1: [{self.name},{id(self)}]}")
+            print(f"Called on top1: [{self.name},{id(self)}]")
             import inspect
             for line in inspect.stack():
                 print(line.function, line.lineno, line.filename)
