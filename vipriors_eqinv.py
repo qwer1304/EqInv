@@ -197,7 +197,7 @@ class Net(nn.Module):
         super(Net, self).__init__()
         # encoder
         model = Model_Imagenet()
-        if device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
         if os.path.isfile(pretrained_path):
             print("=> loading checkpoint '{}'".format(pretrained_path))
             checkpoint = torch.load(pretrained_path, map_location=device)
