@@ -576,7 +576,7 @@ class AverageMeter(object):
     """Computes and stores the average and current value"""
     @property
     def sum(self):
-        return self._sum
+        return self._ssum
 
     @sum.setter
     def ssum(self, value):
