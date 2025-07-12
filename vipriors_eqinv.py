@@ -595,6 +595,14 @@ class AverageMeter(object):
         self.debug = debug
         self.reset()
 
+    def __setattr__(self, name, value):
+        if self.name == "Acc@1_top1" and name in ["sum", "_sum"]:
+            import inspect
+            print(f"[{self.name}] __setattr__ called! {name} -> {value}")
+            for frame in inspect.stack()[1:6]:
+                print(f"  {frame.function} at {frame.lineno} in {frame.filename}")
+        super().__setattr__(name, value)
+
     def reset(self):
         self.val = 0
         self.avg = 0
