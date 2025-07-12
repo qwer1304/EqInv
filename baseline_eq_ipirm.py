@@ -19,7 +19,7 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 from collections import defaultdict
-from randaugment import RandAugment
+#from randaugment import RandAugment
 
 import utils
 
@@ -59,6 +59,8 @@ parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                     dest='weight_decay')
 parser.add_argument('-p', '--print-freq', default=20, type=int,
                     metavar='N', help='print frequency (default: 10)')
+parser.add_argument('--test-freq', default=None, type=int,
+                    metavar='N', help='test frequency (default: None, test only at end)')
 parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('--evaluate', action="store_true", default=False, help='evaluate?')
@@ -75,6 +77,14 @@ parser.add_argument('--ft_stage', type=str, default='all', help='realse all the 
 parser.add_argument('--random_aug', action="store_true", default=False, help='random_aug?')
 parser.add_argument('--pretrain_path', type=str, default=None, help='the path of pretrain model')
 
+# image
+parser.add_argument('--image_size', type=int, default=224, help='image size')
+
+# color in label
+parser.add_argument('--target_transform', type=str, default=None, help='a function definition to apply to target')
+
+# space between columns
+parser.add_argument('--spaces', type=int, default=4, help='spaces between entries in progress print (instead of tab)')
 
 args = parser.parse_args()
 
@@ -179,14 +189,14 @@ def main():
                                      std=[0.229, 0.224, 0.225])
     if args.random_aug:
         train_tranform = transforms.Compose([
-            transforms.RandomResizedCrop(224),
+            transforms.RandomResizedCrop(args.image_size),
             transforms.RandomHorizontalFlip(),
-            RandAugment(),
+            transforms.RandAugment(),
             transforms.ToTensor(),
             normalize, ])
     else:
         train_tranform = transforms.Compose([
-                transforms.RandomResizedCrop(224),
+                transforms.RandomResizedCrop(args.image_size),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 normalize,])
@@ -194,22 +204,24 @@ def main():
 
     val_transform = transforms.Compose([
             transforms.Resize(256),
-            transforms.CenterCrop(224),
+            transforms.CenterCrop(args.image_size),
             transforms.ToTensor(),
             normalize,])
 
-    images = utils.Imagenet_idx(root=args.data+'/val', transform=val_transform)
+    target_transform = eval(args.target_transform) if args.target_transform is not None else None
+
+    images = utils.Imagenet_idx(root=args.data+'/val', transform=val_transform, target_transform=target_transform)
     val_loader = torch.utils.data.DataLoader(images, batch_size=args.batch_size, num_workers=args.workers, shuffle=False)
 
 
     # train_images = torchvision.datasets.ImageNet(data_path, split='train', transform=train_tranform)
-    train_images = utils.Imagenet_idx(root=args.data+'/train', transform=train_tranform)
+    train_images = utils.Imagenet_idx(root=args.data+'/train', transform=train_tranform, target_transform=target_transform)
     train_loader = torch.utils.data.DataLoader(train_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=True)
-    test_images = utils.Imagenet_idx(root=args.data+'/testgt', transform=val_transform)
+    test_images = utils.Imagenet_idx(root=args.data+'/testgt', transform=val_transform, target_transform=target_transform)
     test_loader = torch.utils.data.DataLoader(test_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=False)
 
     if args.evaluate:
-        validate(val_loader, model, criterion, args, epoch=-1)
+        validate(val_loader, model, criterion, args, epoch=-1, prefix='Val: ')
         return
 
 
@@ -222,7 +234,11 @@ def main():
         train(train_loader, model, criterion, optimizer, epoch, args)
 
         # evaluate on validation set
-        acc1 = validate(val_loader, model, criterion, args, epoch)
+        acc1 = validate(val_loader, model, criterion, args, epoch, prefix='Val: ')
+
+        # evaluate on test set
+        if args.test_freq is not None and epoch % args.test_freq == 0:
+            acc1_test = validate(test_loader, model, criterion, args, epoch, prefix='Test: ')
 
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
@@ -238,7 +254,7 @@ def main():
 
 
     utils.write_log('\nStart to test on Test Set', args.log_file, print_=True)
-    acc1_test = validate(test_loader, model, criterion, args, epoch)
+    acc1_test = validate(test_loader, model, criterion, args, epoch, prefix='Test: ')
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):
@@ -286,12 +302,12 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         end = time.time()
 
         if i % args.print_freq == 0:
-            progress.display(i)
+            progress.display(i, args.spaces)
 
 
 
 
-def validate(val_loader, model, criterion, args, epoch):
+def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
     batch_time = AverageMeter('Time', ':6.3f', Summary.NONE)
     losses = AverageMeter('Loss', ':.4e', Summary.NONE)
     top1 = AverageMeter('Acc@1', ':6.2f', Summary.AVERAGE)
@@ -299,7 +315,7 @@ def validate(val_loader, model, criterion, args, epoch):
     progress = ProgressMeter(
         len(val_loader),
         [batch_time, losses, top1, top5],
-        prefix='Test: ',
+        prefix=prefix,
         log_file=args.log_file)
 
     # switch to evaluate mode
@@ -327,7 +343,7 @@ def validate(val_loader, model, criterion, args, epoch):
             end = time.time()
 
             if i % args.print_freq == 0:
-                progress.display(i)
+                progress.display(i, args.spaces)
 
         progress.display_summary(epoch)
 
@@ -395,10 +411,10 @@ class ProgressMeter(object):
         self.prefix = prefix
         self.log_file = log_file
 
-    def display(self, batch):
+    def display(self, batch, spaces):
         entries = [self.prefix + self.batch_fmtstr.format(batch)]
         entries += [str(meter) for meter in self.meters]
-        print('\t'.join(entries))
+        print((' ' * spaces).join(entries))
 
 
     def display_summary(self, epoch):
@@ -426,7 +442,8 @@ def adjust_learning_rate(optimizer, init_lr, epoch, args):
 def accuracy(output, target, topk=(1,)):
     """Computes the accuracy over the k top predictions for the specified values of k"""
     with torch.no_grad():
-        maxk = max(topk)
+        num_classes = output.size(1)
+        maxk = min(max(topk), num_classes)
         batch_size = target.size(0)
 
         _, pred = output.topk(maxk, 1, True, True)
