@@ -579,17 +579,17 @@ class AverageMeter(object):
         return self._sum
 
     @sum.setter
-    def sum(self, value):
+    def ssum(self, value):
         if getattr(self, 'name', '') == 'Acc@1_top1':
             print(f"[{self.name},{id(self)}] sum setter called! Changing sum from {self._sum} to {value}")
             import inspect
             for line in inspect.stack():
                 print(line.function, line.lineno, line.filename)
-        self._sum = value
+        self._ssum = value
 
     def __init__(self, name, fmt=':f', summary_type=Summary.AVERAGE, debug=False):
         self.name = name
-        self._sum = 0
+        self._ssum = 0
         self.fmt = fmt
         self.summary_type = summary_type
         self.debug = debug
@@ -597,7 +597,7 @@ class AverageMeter(object):
 
     def __setattr__(self, attr_name, value):
         # Only check self.name if it already exists
-        if attr_name in ["sum", "_sum"]:
+        if attr_name in ["ssum", "_ssum"]:
             if "name" in self.__dict__ and self.__dict__["name"] == "Acc@1_top1":
                 import inspect
                 print(f"[{self.__dict__['name']}] __setattr__ called! {attr_name} -> {value}")
@@ -608,8 +608,8 @@ class AverageMeter(object):
     def reset(self):
         self.val = 0
         self.avg = 0
-        self.sum = 0
-        self.count = 0
+        self.ssum = 0
+        self.ccount = 0
 
     def update(self, val, n=1):
         if self.name == "Acc@1_top1":
@@ -619,17 +619,17 @@ class AverageMeter(object):
                 print(line.function, line.lineno, line.filename)
             
         prev_val = self.val
-        prev_sum = self.sum
-        prev_count = self.count
+        prev_sum = self.ssum
+        prev_count = self.ccount
         prev_avg = self.avg
         self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
+        self.ssum += val * n
+        self.ccount += n
+        self.avg = self.ssum / self.ccount
         if self.debug:
             print(f'val: {val}, n: {n}')
             print('prevs:',"val: {}, sum: {}, count: {}, avg: {}".format(prev_val, prev_sum, prev_count, prev_avg))
-            print('curr:',"val: {}, sum: {}, count: {}, avg: {}".format(self.val, self.sum, self.count, self.avg))
+            print('curr:',"val: {}, sum: {}, count: {}, avg: {}".format(self.val, self.ssum, self.ccount, self.avg))
 
     def __str__(self):
         fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
@@ -642,9 +642,9 @@ class AverageMeter(object):
         elif self.summary_type is Summary.AVERAGE:
             fmtstr = '{name} {avg:.3f}'
         elif self.summary_type is Summary.SUM:
-            fmtstr = '{name} {sum:.3f}'
+            fmtstr = '{name} {ssum:.3f}'
         elif self.summary_type is Summary.COUNT:
-            fmtstr = '{name} {count:.3f}'
+            fmtstr = '{name} {ccount:.3f}'
         else:
             raise ValueError('invalid summary type %r' % self.summary_type)
 
