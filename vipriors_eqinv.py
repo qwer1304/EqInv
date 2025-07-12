@@ -595,13 +595,15 @@ class AverageMeter(object):
         self.debug = debug
         self.reset()
 
-    def __setattr__(self, name, value):
-        if self.name == "Acc@1_top1" and name in ["sum", "_sum"]:
-            import inspect
-            print(f"[{self.name}] __setattr__ called! {name} -> {value}")
-            for frame in inspect.stack()[1:6]:
-                print(f"  {frame.function} at {frame.lineno} in {frame.filename}")
-        super().__setattr__(name, value)
+    def __setattr__(self, attr_name, value):
+        # Only check self.name if it already exists
+        if attr_name in ["sum", "_sum"]:
+            if "name" in self.__dict__ and self.__dict__["name"] == "Acc@1_top1":
+                import inspect
+                print(f"[{self.__dict__['name']}] __setattr__ called! {attr_name} -> {value}")
+                for frame in inspect.stack()[1:6]:
+                    print(f"  {frame.function} at line {frame.lineno} in {frame.filename}")
+        super().__setattr__(attr_name, value)
 
     def reset(self):
         self.val = 0
