@@ -224,8 +224,8 @@ class Net(nn.Module):
         self.fc = nn.Linear(2048, num_class, bias=True)
         if msg.unexpected_keys:
             # Create your fc layer if not yet created
-            print("unexpected",state_dict['fc.weight'].shape, state_dict['fc.bias'].shape, self.fc.weight, self.fc.bias.shape)
-            if state_dict['fc.weight'].shape == self.fc.weight and \
+            print("unexpected",state_dict['fc.weight'].shape, state_dict['fc.bias'].shape, self.fc.weight.shape, self.fc.bias.shape)
+            if state_dict['fc.weight'].shape == self.fc.weight.shape and \
                state_dict['fc.bias'].shape == self.fc.bias.shape:
                 # Copy weights
                 self.fc.weight.data.copy_(state_dict['fc.weight'])
