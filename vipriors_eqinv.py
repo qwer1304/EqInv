@@ -199,6 +199,7 @@ class Net(nn.Module):
         # encoder
         model = Model_Imagenet()
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        msg = []
         if pretrained_path is not None and os.path.isfile(pretrained_path):
             print("=> loading checkpoint '{}'".format(pretrained_path))
             checkpoint = torch.load(pretrained_path, map_location=device)
