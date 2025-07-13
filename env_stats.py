@@ -58,9 +58,9 @@ def main(args):
     mpl_version_tuple = tuple(int(part) for part in mpl_version_str.split('.'))
     hatches_linewidth_supported = mpl_version_tuple >= (3, 10, 0)
 
-    fp = 'misc/env_ref_set_vipriors{}_rn50_{}_pretrained'.format(args.num_shot, args.stage1_model)
+    fp = args.filepath
     env_ref_set = torch.load(fp)
-    data = './data/DataSets/CMNIST_wcolor/64'
+    data = args.data
     memory_images = utils.Imagenet_idx(root=data + '/train', transform=None, target_transform=None)
     num_samples = len(memory_images)
     all_idx = list(range(num_samples))
@@ -266,8 +266,8 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create CMNIST dataset')
 
-    parser.add_argument('--stage1_model', type=str, default='ipirm', help='stage 1 model')
-    parser.add_argument('--num_shot', type=str, default='50', help='number of images in each class during stage 1')
+    parser.add_argument('--fp', type=str, help='path of cluster file')
+    parser.add_argument('--data', type=str, default='./data/DataSets/CMNIST_wcolor/64')
     
     args = parser.parse_args()
     

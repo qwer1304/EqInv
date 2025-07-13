@@ -224,7 +224,6 @@ class Net(nn.Module):
         self.fc = nn.Linear(2048, num_class, bias=True)
         if msg.unexpected_keys:
             # Create your fc layer if not yet created
-            print("unexpected",state_dict['fc.weight'].shape, state_dict['fc.bias'].shape, self.fc.weight.shape, self.fc.bias.shape)
             if state_dict['fc.weight'].shape == self.fc.weight.shape and \
                state_dict['fc.bias'].shape == self.fc.bias.shape:
                 # Copy weights
@@ -408,7 +407,7 @@ def main():
     if args.opt_mask:
         torch.save(model.module.mask_layer, '{}/{}/mask_layer_opt'.format(args.save_root, args.name))
 
-    utils.write_log('\nThe best accuracy: {}'.format(best_acc1), args.log_file, print_=True)
+    utils.write_log('\nThe best Val accuracy: {}'.format(best_acc1), args.log_file, print_=True)
     utils.write_log('\nStart to test on Test Set', args.log_file, print_=True)
     acc1_test = validate(test_loader, model, criterion, args, epoch, prefix='Test: ')
 
@@ -665,7 +664,7 @@ class ProgressMeter(object):
 
 
     def display_summary(self, epoch):
-        entries = [" *", "Epoch: [{}]".format(epoch)]
+        entries = [" * {} Epoch: [{}]".format(self.prefix, epoch)]
         entries += [meter.summary() for meter in self.meters]
         print(' '.join(entries))
 
