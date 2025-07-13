@@ -209,7 +209,6 @@ class Net(nn.Module):
                 for k, v in state_dict.items():
                     # Remove "module.model." prefix
                     name = k.replace("module.model.", "")  # Adjust this to your prefix exactly
-                    name = k.replace("module.", "")  # Adjust this to your prefix exactly                   
                     new_state_dict[name] = v
                 state_dict = new_state_dict
             else:
