@@ -222,7 +222,7 @@ class Net(nn.Module):
         self.f = model.f
         # classifier
         self.fc = nn.Linear(2048, num_class, bias=True)
-        if msg.unexpected_keys:
+        if msg and msg.unexpected_keys:
             # Create your fc layer if not yet created
             if state_dict['fc.weight'].shape == self.fc.weight.shape and \
                state_dict['fc.bias'].shape == self.fc.bias.shape:
