@@ -228,6 +228,7 @@ class Net(nn.Module):
                 # Copy weights
                 self.fc.weight.data.copy_(state_dict['fc.weight'])
                 self.fc.bias.data.copy_(state_dict['fc.bias'])
+                print('Recovering fc layer from checkpoint')
 
     def forward(self, x):
         x = self.f(x)
