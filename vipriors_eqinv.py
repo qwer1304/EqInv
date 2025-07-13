@@ -1,5 +1,6 @@
 import argparse
 import os
+import glob
 #os.environ["CUDA_VISIBLE_DEVICES"] ='0'
 import random
 import shutil
@@ -342,20 +343,38 @@ def main():
     # number of images per class when training ip-irm
     assert args.num_shot in ['10', '20', '50']
 
-    fp = 'misc/env_ref_set_vipriors{}_rn50_{}_pretrained'.format(args.num_shot, args.stage1_model)
+    directory = f'misc/{args.name}'
+    pattern = 'env_ref_set_*'  # <-- your desired pattern
+    
+    # Find matching files
+    files = glob.glob(os.path.join(directory, pattern))
+    
+    # Sort by modification time
+    files_sorted = sorted(files, key=os.path.getmtime, reverse=True)
+    if files_sorted:
+        fp = files_sorted[0]
+    else:
+        if args.resume:
+            suffix = 'resumed'
+        elif args.pretrain_path is not None and os.path.isfile(args.pretrain_path):
+            suffix = 'pretrained'
+        else:
+            suffix = 'default'
+        fp = os.path.join(directory, 'env_ref_set_' + suffix)
     if args.only_cluster or not os.path.exists(fp):
         if args.only_cluster:
-            print('Recalculation of cluster file requested...')
+            print('Recalculation of cluster file requested... ', end="")
         else:
-            print('no cluster file, thus first process...')
+            print('No cluster file, creating... ', end="")
         env_ref_set = utils_cluster.cal_cosine_distance(model, memory_loader, args.class_num, temperature=0.1, anchor_class=None, class_debias_logits=True)
         os.makedirs(os.path.dirname(fp), exist_ok=True)
         torch.save(env_ref_set, fp)
+        print(f'cluster {fp} ready!') 
         if args.only_cluster:
-            print(f'Cluster {fp} ready!') 
             return
     else:
         env_ref_set = torch.load(fp)
+        print(f'Cluster {fp} loaded.')
 
     best_acc1 = 0
     for epoch in range(args.start_epoch, args.epochs):
