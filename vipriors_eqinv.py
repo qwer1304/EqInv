@@ -198,7 +198,7 @@ class Net(nn.Module):
         # encoder
         model = Model_Imagenet()
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        if os.path.isfile(pretrained_path):
+        if pretrained_path is not None and os.path.isfile(pretrained_path):
             print("=> loading checkpoint '{}'".format(pretrained_path))
             checkpoint = torch.load(pretrained_path, map_location=device)
             _, ext = os.path.splitext(pretrained_path)
@@ -209,6 +209,7 @@ class Net(nn.Module):
                 for k, v in state_dict.items():
                     # Remove "module.model." prefix
                     name = k.replace("module.model.", "")  # Adjust this to your prefix exactly
+                    name = k.replace("module.", "")  # Adjust this to your prefix exactly                   
                     new_state_dict[name] = v
                 state_dict = new_state_dict
             else:
