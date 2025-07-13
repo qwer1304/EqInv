@@ -224,6 +224,7 @@ class Net(nn.Module):
         self.fc = nn.Linear(2048, num_class, bias=True)
         if msg.unexpected_keys:
             # Create your fc layer if not yet created
+            print("unexpected",state_dict['fc.weight'].shape, state_dict['fc.bias'].shape, self.fc.weight, self.fc.bias.shape)
             if state_dict['fc.weight'].shape == self.fc.weight and \
                state_dict['fc.bias'].shape == self.fc.bias.shape:
                 # Copy weights
@@ -362,10 +363,11 @@ def main():
             suffix = 'default'
         fp = os.path.join(directory, 'env_ref_set_' + suffix)
     if args.only_cluster or not os.path.exists(fp):
+        # Cannot use end="" b/c cal_cosine_distance prints progress bar and overwrites its
         if args.only_cluster:
-            print('Recalculation of cluster file requested... ', end="")
+            print('Recalculation of cluster file requested... ')
         else:
-            print('No cluster file, creating... ', end="")
+            print('No cluster file, creating... ')
         env_ref_set = utils_cluster.cal_cosine_distance(model, memory_loader, args.class_num, temperature=0.1, anchor_class=None, class_debias_logits=True)
         os.makedirs(os.path.dirname(fp), exist_ok=True)
         torch.save(env_ref_set, fp)
