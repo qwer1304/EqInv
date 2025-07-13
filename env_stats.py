@@ -58,7 +58,7 @@ def main(args):
     mpl_version_tuple = tuple(int(part) for part in mpl_version_str.split('.'))
     hatches_linewidth_supported = mpl_version_tuple >= (3, 10, 0)
 
-    fp = args.filepath
+    fp = args.fp
     env_ref_set = torch.load(fp)
     data = args.data
     memory_images = utils.Imagenet_idx(root=data + '/train', transform=None, target_transform=None)
