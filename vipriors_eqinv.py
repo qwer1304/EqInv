@@ -542,9 +542,9 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
         else:
             loss_erm = criterion(output, target)
         masked_feature_for_globalcont_norm = F.normalize(masked_feature_for_globalcont, dim=-1)
+        #                            stack of masked_feature1, masked_feature2. each is: mlp(masked_feature_erm).
+        #                            1 and 2 are two copies of augmented image.
         loss_cont = args.cont_weight * \
-            #                        stack of masked_feature1, masked_feature2. each is: mlp(masked_feature_erm).
-            #                        1 and 2 are two copies of augmented image.
             info_nce_loss_supervised(masked_feature_for_globalcont_norm.unsqueeze(1),
                                      masked_feature_for_globalcont_norm.size(0), 
                                      temperature=args.temperature, 
