@@ -253,7 +253,7 @@ def main(args):
         def col_label_corr(idxs):
             col = [memory_images.imgs[j][label] // 2 for j in idxs]
             tar = [memory_images.imgs[j][label] % 2 for j in idxs]
-            corr = np.corrcoef(np.array(col), np.array(tar0))
+            corr = np.corrcoef(np.array(col), np.array(tar))
             return corr
 
         idxs = env_n[0]
