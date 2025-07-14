@@ -152,8 +152,11 @@ def main(args):
     R = 0
     G = 1
 
+    ni = 1
     for k, indeces in env_ref_set.items(): # over anchors, indeces is a tuple
-        fig, ax = plt.subplots(1, 2, figsize=(2*5, 4))
+        fig, ax = plt.subplots(1, ni, figsize=(ni*5, 4))
+        if ni == 1:
+            ax = [ax]
         env_n = [indeces[0].tolist(), indeces[1].tolist()] # "other" samples split between environments
         env_a = list(set(all_idx) - set(env_n[0]) - set(env_n[1])) # anchor samples
 
@@ -197,7 +200,8 @@ def main(args):
         ax[i].set_xticklabels(labels)
         ax[i].legend(loc='center')
         ax[i].grid(True)
-
+        
+        """
         i += 1
         env_tar = np.zeros((len(env_ref_set), 2), dtype=int) # (env, tar) - environment x target array
 
@@ -207,8 +211,7 @@ def main(args):
                 sum([memory_images.imgs[j][label] % 2 == 1 for j in env_n[e]])
             ])
 
-        print(env_tar)
-        perc = env_tar / env_tar.sum(axis=0, keepdims=True) * 100 # (env, tar)
+        perc = env_tar / env_tar.sum(axis=0, keepdims=True) * 100 # (1, tar)
         
         labels = ['0', '1']
         x = np.arange(len(labels))
@@ -239,6 +242,7 @@ def main(args):
         ax[i].set_xticklabels(labels)
         ax[i].legend(loc='center')
         ax[i].grid(True)
+        """
 
         # How to handle final display or saving
         if is_notebook():
