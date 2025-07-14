@@ -205,10 +205,10 @@ def main(args):
         i += 1
 
         # number of anchor samples for color c 
-            col_a = np.array([
-                sum([memory_images.imgs[j][label] // 2 == R for j in env_a])
-                sum([memory_images.imgs[j][label] // 2 == G for j in env_a])
-                ])
+        col_a = np.array([
+            sum([memory_images.imgs[j][label] // 2 == R for j in env_a])
+            sum([memory_images.imgs[j][label] // 2 == G for j in env_a])
+            ])
 
         perc = (env_col + col_a) / (env_col + col_a).sum(axis=0, keepdims=True) * 100 # (env, col)
         
