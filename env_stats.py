@@ -152,7 +152,7 @@ def main(args):
     R = 0
     G = 1
 
-    ni = 1
+    ni = 2
     for k, indeces in env_ref_set.items(): # over anchors, indeces is a tuple
         fig, ax = plt.subplots(1, ni, figsize=(ni*5, 4))
         if ni == 1:
@@ -161,6 +161,7 @@ def main(args):
         env_a = list(set(all_idx) - set(env_n[0]) - set(env_n[1])) # anchor samples
 
         i = 0
+        # number of samples for color c in environment e
         env_col = np.zeros((len(env_ref_set), 2), dtype=int) # (env, col) - environment x color array
 
         for e in range(env_col.shape[0]):
@@ -195,28 +196,26 @@ def main(args):
 
         ax[i].set_ylabel('Percentage (%)')
         ax[i].set_xlabel('Color')
-        ax[i].set_title(f'Split of colors R/G between envs 0/1 for anchor {k}')
+        ax[i].set_title(f'Split of colors R/G between envs 0/1 for NON-anchor samples for anchor {k}')
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels)
         ax[i].legend(loc='center')
         ax[i].grid(True)
         
-        """
         i += 1
-        env_tar = np.zeros((len(env_ref_set), 2), dtype=int) # (env, tar) - environment x target array
 
-        for e in range(env_tar.shape[0]):
-            env_tar[e] = np.array([
-                sum([memory_images.imgs[j][label] % 2 == 0 for j in env_n[e]]),
-                sum([memory_images.imgs[j][label] % 2 == 1 for j in env_n[e]])
-            ])
+        # number of anchor samples for color c 
+            col_a = np.array([
+                sum([memory_images.imgs[j][label] // 2 == R for j in env_a])
+                sum([memory_images.imgs[j][label] // 2 == G for j in env_a])
+                ])
 
-        perc = env_tar / env_tar.sum(axis=0, keepdims=True) * 100 # (1, tar)
+        perc = (env_col + col_a) / (env_col + col_a).sum(axis=0, keepdims=True) * 100 # (env, col)
         
-        labels = ['0', '1']
+        labels = ['R', 'G']
         x = np.arange(len(labels))
         width = 0.35
-        colors_hatches = ['blue', 'magenta']
+        colors_hatches = ['red', 'lime']
         if hatches_linewidth_supported:
             bar = ax[i].bar(x - width/2, perc[0], width, label='env_0', hatch="x", color='lightsteelblue', hatch_linewidth=3.0)
         else:
@@ -236,13 +235,12 @@ def main(args):
             bc.stale = True
 
         ax[i].set_ylabel('Percentage (%)')
-        ax[i].set_xlabel('Target')
-        ax[i].set_title(f'Split of target 0/1 between envs 0/1 for anchor {k}')
+        ax[i].set_xlabel('Color')
+        ax[i].set_title(f'Split of colors R/G between envs 0/1 for ALL samples for anchor {k}')
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels)
         ax[i].legend(loc='center')
         ax[i].grid(True)
-        """
 
         # How to handle final display or saving
         if is_notebook():
