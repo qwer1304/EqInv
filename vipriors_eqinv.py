@@ -205,10 +205,9 @@ class Net(nn.Module):
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         msg = []
         if pretrained_path is not None and os.path.isfile(pretrained_path):
-            print("=> loading checkpoint '{}'".format(pretrained_path))
+            print("=> loading pretrained checkpoint '{}'".format(pretrained_path))
             checkpoint = torch.load(pretrained_path, map_location=device)
             _, ext = os.path.splitext(pretrained_path)
-            print(ext)
             if ext == '.tar':
                 state_dict = checkpoint['state_dict']
                 new_state_dict = OrderedDict()
