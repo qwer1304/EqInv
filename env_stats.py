@@ -207,6 +207,7 @@ def main(args):
                 sum([memory_images.imgs[j][label] % 2 == 1 for j in env_n[e]])
             ])
 
+        print(env_tar)
         perc = env_tar / env_tar.sum(axis=0, keepdims=True) * 100 # (env, tar)
         
         labels = ['0', '1']
