@@ -196,7 +196,7 @@ def main(args):
 
         ax[i].set_ylabel('Percentage (%)')
         ax[i].set_xlabel('Color')
-        ax[i].set_title(f'Split of colors R/G between envs 0/1 for NON-anchor samples for anchor {k}')
+        ax[i].set_title(f'Split of colors R/G between envs 0/1 for NON-anchor samples for anchor {k}', wrap=True)
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels)
         ax[i].legend(loc='center')
