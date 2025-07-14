@@ -210,7 +210,7 @@ def main(args):
 
         # number of anchor samples for color c 
         col_a = np.array([
-            sum([mefmory_images.imgs[j][label] // 2 == R for j in env_a]),
+            sum([memory_images.imgs[j][label] // 2 == R for j in env_a]),
             sum([memory_images.imgs[j][label] // 2 == G for j in env_a])
             ])
 
