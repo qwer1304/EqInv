@@ -268,17 +268,12 @@ def main(args):
             else:
                 return np.corrcoef(x, y)[0, 1]
 
-        idxs = env_n[0]
-        corr0_n = col_label_corr(idxs)
         idxs = env_n[0] + env_a
         corr0_na = col_label_corr(idxs)
         
-        idxs = env_n[1]
-        corr1_n = col_label_corr(idxs)
         idxs = env_n[1] + env_a
         corr1_na = col_label_corr(idxs)
 
-        print("Color/Label correlations neg:", f'achor: {k}', "env 0:", corr0_n, "env 1:", corr1_n)
         print("Color/Label correlations pos+neg:", f'achor: {k}', "env 0:", corr0_na, "env 1:", corr1_na)
 
     train_images = utils.Imagenet_idx(root=data+'/train', transform=None, target_transform=None)
