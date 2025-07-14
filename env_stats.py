@@ -258,28 +258,28 @@ def main(args):
         def col_label_corr(idxs):
             col = [memory_images.imgs[j][label] // 2 for j in idxs]
             tar = [memory_images.imgs[j][label] % 2 for j in idxs]
-            if len(col) > 0 and len(tar) > 0:
-                corr = np.corrcoef(np.array(col), np.array(tar))
+            x = np.asarray(col)
+            y = np.asarray(tar)
+            std_x = np.std(x)
+            std_y = np.std(y)
+    
+            if std_x == 0 or std_y == 0:
+                return 0.0  # or np.nan, depending on what you want
             else:
-                corr = np.zeros(2,2)
-            return corr
+                return np.corrcoef(x, y)[0, 1]
 
         idxs = env_n[0]
-        print(len(idxs))
         corr0_n = col_label_corr(idxs)
-        print(corr0_n)
         idxs = env_n[0] + env_a
         corr0_na = col_label_corr(idxs)
         
         idxs = env_n[1]
-        print(len(idxs))
         corr1_n = col_label_corr(idxs)
-        print(corr1_n)
         idxs = env_n[1] + env_a
         corr1_na = col_label_corr(idxs)
 
-        print("Color/Label correlations neg:", f'achor: {k}', "env 0:", corr0_n[0,1], "env 1:", corr1_n[0,1])
-        print("Color/Label correlations pos+neg:", f'achor: {k}', "env 0:", corr0_na[0,1], "env 1:", corr1_na[0,1])
+        print("Color/Label correlations neg:", f'achor: {k}', "env 0:", corr0_n, "env 1:", corr1_n)
+        print("Color/Label correlations pos+neg:", f'achor: {k}', "env 0:", corr0_na, "env 1:", corr1_na)
 
     train_images = utils.Imagenet_idx(root=data+'/train', transform=None, target_transform=None)
     val_images = utils.Imagenet_idx(root=data+'/val', transform=None, target_transform=None)
