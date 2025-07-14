@@ -207,18 +207,17 @@ class Net(nn.Module):
         if pretrained_path is not None and os.path.isfile(pretrained_path):
             print("=> loading pretrained checkpoint '{}'".format(pretrained_path))
             checkpoint = torch.load(pretrained_path, map_location=device)
-            _, ext = os.path.splitext(pretrained_path)
-            if ext == '.tar':
+            if 'state_dict' in checkpoint.keys():
                 state_dict = checkpoint['state_dict']
-                new_state_dict = OrderedDict()
-                for k, v in state_dict.items():
-                    # Remove "module.model." prefix
-                    name = k.replace("module.model.", "")  # Adjust this to your prefix exactly
-                    name = name.replace("module.", "")  # Adjust this to your prefix exactly                   
-                    new_state_dict[name] = v
-                state_dict = new_state_dict
             else:
                 state_dict = checkpoint
+            new_state_dict = OrderedDict()
+            for k, v in state_dict.items():
+                # Remove "module.model." prefix
+                name = k.replace("module.model.", "")
+                name = name.replace("module.", "")                  
+                new_state_dict[name] = v
+            state_dict = new_state_dict
             msg = model.load_state_dict(state_dict, strict=False)
             print(msg)
         else:
