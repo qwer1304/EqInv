@@ -221,7 +221,7 @@ class Net(nn.Module):
             msg = model.load_state_dict(state_dict, strict=False)
             print(msg)
         else:
-            print("=> no checkpoint found at '{}'".format(pretrained_path))
+            print("=> no pretrained checkpoint found at '{}'".format(pretrained_path))
         self.f = model.f
         # classifier
         self.fc = nn.Linear(2048, num_class, bias=True)
