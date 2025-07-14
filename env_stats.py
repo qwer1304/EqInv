@@ -154,7 +154,6 @@ def main(args):
 
     for k, indeces in env_ref_set.items(): # over anchors, indeces is a tuple
         fig, ax = plt.subplots(1, 2, figsize=(2*5, 4))
-        ax = [ax]
         env_n = [indeces[0].tolist(), indeces[1].tolist()] # "other" samples split between environments
         env_a = list(set(all_idx) - set(env_n[0]) - set(env_n[1])) # anchor samples
 
