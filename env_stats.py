@@ -5,6 +5,7 @@ import torch
 import utils
 import matplotlib as mpl
 import numpy as np
+import textwrap
 
 import os
 import argparse
@@ -196,7 +197,7 @@ def main(args):
 
         ax[i].set_ylabel('Percentage (%)')
         ax[i].set_xlabel('Color')
-        ax[i].set_title(f'Split of colors R/G between envs 0/1 for NON-anchor samples for anchor {k}', wrap=True)
+        ax[i].set_title(textwrap.fill(f'Split of colors R/G between envs 0/1 for NON-anchor samples for anchor {k}', width=25))
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels)
         ax[i].legend(loc='center')
