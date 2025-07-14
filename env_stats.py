@@ -67,7 +67,7 @@ def main(args):
     all_idx = list(range(num_samples))
 
     """
-    env_ref_set is a dictionary "over" class labels.
+    env_ref_set is a dictionary over class labels.
     each entry is a tuple over class-environments (K = 2) of sample indices in loader that are assigned to that environment (equal number)
     the environments have been precomputed by running the images through the default (pre-trained) model, calculated the (corrected) cosine
     distance between the "other" samples and anchor samples, sorting in descending order the distances and splitting the result 50/50 into
@@ -160,7 +160,9 @@ def main(args):
         if ni == 1:
             ax = [ax]
         env_n = [indeces[0].tolist(), indeces[1].tolist()] # "other" samples split between environments
+        assert abs(len(env_n[0]) - len(env_n[1])) <= 1, f"anchor {k}: number of samples in the two environments don't match"
         env_a = list(set(all_idx) - set(env_n[0]) - set(env_n[1])) # anchor samples
+        assert len(env_a) + len(env_n[0]) + len(env_n[1]) == len(all_idx), f"anchor {k}: number of samples don't add up"
 
         i = 0
         # number of samples for color c in environment e
@@ -208,7 +210,7 @@ def main(args):
 
         # number of anchor samples for color c 
         col_a = np.array([
-            sum([memory_images.imgs[j][label] // 2 == R for j in env_a]),
+            sum([mefmory_images.imgs[j][label] // 2 == R for j in env_a]),
             sum([memory_images.imgs[j][label] // 2 == G for j in env_a])
             ])
 
@@ -257,7 +259,7 @@ def main(args):
         else:
             plt.show(block = (k == len(env_ref_set)-1 and i == 1))
             
-        print(f"Anchor {k}: ", "non-anchor:", env_col, "anchor:", col_a)
+        print(f"Anchor {k}: ", "non-anchor:", env_col, "anchor:", np.concatenate([col_a, col_a], axis=0))
 
         def col_label_corr(idxs):
             col = [memory_images.imgs[j][label] // 2 for j in idxs]
