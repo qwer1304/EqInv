@@ -26,6 +26,8 @@ import utils_cluster
 from torchvision.models.resnet import resnet50
 #from randaugment import RandAugment
 
+import hashlib
+
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
                      and callable(models.__dict__[name]))
@@ -359,9 +361,13 @@ def main():
             fp = files_sorted[0]
         else:
             if args.resume:
-                suffix = 'resumed'
+                hash_object = hashlib.sha256(args.resume.encode())
+                hex_dig = hash_object.hexdigest()
+                suffix = hex_dig + '_resumed'
             elif args.pretrain_path is not None and os.path.isfile(args.pretrain_path):
-                suffix = 'pretrained'
+                hash_object = hashlib.sha256(args.pretrain_path.encode())
+                hex_dig = hash_object.hexdigest()
+                suffix = hex_dig + '_pretrained'
             else:
                 suffix = 'default'
             fp = os.path.join(directory, 'env_ref_set_' + suffix)
@@ -506,7 +512,12 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                     output_env, target_num_env, masked_feature_env = torch.cat([output_pos, output_neg_env], dim=0), torch.cat([target_num_pos, target_num_neg_env], dim=0), torch.cat([masked_feature_pos, masked_feature_neg_env], dim=0)
                     masked_feature_env_norm = F.normalize(masked_feature_env, dim=-1)
                     # cont_loss_env is the contrastive loss of this environment
-                    cont_loss_env = args.cont_weight * info_nce_loss_supervised(masked_feature_env_norm.unsqueeze(1), masked_feature_env_norm.size(0), temperature=args.temperature, labels=target_num_env, choose_pos=target_num_env==class_idx)
+                    cont_loss_env = args.cont_weight * 
+                        info_nce_loss_supervised(masked_feature_env_norm.unsqueeze(1),   # stack of positive and negative samples in this env
+                                                 masked_feature_env_norm.size(0),        # their number (batch size)
+                                                 temperature=args.temperature, 
+                                                 labels=target_num_env,                  # labels of these samples
+                                                 choose_pos=target_num_env==class_idx)   # position of positive samples
 
                     env_nll.append(criterion(output_env, target_num_env)) # nll of this environment appended to list
                     temp_pen.append(cont_loss_env) # contrastive loss of this environment appended to list
@@ -531,7 +542,13 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
         else:
             loss_erm = criterion(output, target)
         masked_feature_for_globalcont_norm = F.normalize(masked_feature_for_globalcont, dim=-1)
-        loss_cont = args.cont_weight * info_nce_loss_supervised(masked_feature_for_globalcont_norm.unsqueeze(1), masked_feature_for_globalcont_norm.size(0), temperature=args.temperature, labels=target)
+        loss_cont = args.cont_weight * 
+            #                        stack of masked_feature1, masked_feature2. each is: mlp(masked_feature_erm).
+            #                        1 and 2 are two copies of augmented image.
+            info_nce_loss_supervised(masked_feature_for_globalcont_norm.unsqueeze(1),
+                                     masked_feature_for_globalcont_norm.size(0), 
+                                     temperature=args.temperature, 
+                                     labels=target)
 
 
         loss_all = loss_erm + loss_cont + loss_inv
