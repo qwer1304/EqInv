@@ -258,7 +258,6 @@ def main(args):
         def col_label_corr(idxs):
             col = [memory_images.imgs[j][label] // 2 for j in idxs]
             tar = [memory_images.imgs[j][label] % 2 for j in idxs]
-            print(len(col),len(tar))
             if len(col) > 0 and len(tar) > 0:
                 corr = np.corrcoef(np.array(col), np.array(tar))
             else:
@@ -266,12 +265,16 @@ def main(args):
             return corr
 
         idxs = env_n[0]
+        print(len(idxs))
         corr0_n = col_label_corr(idxs)
+        print(corr0_n)
         idxs = env_n[0] + env_a
         corr0_na = col_label_corr(idxs)
         
         idxs = env_n[1]
+        print(len(idxs))
         corr1_n = col_label_corr(idxs)
+        print(corr1_n)
         idxs = env_n[1] + env_a
         corr1_na = col_label_corr(idxs)
 
