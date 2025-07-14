@@ -260,7 +260,10 @@ def main(args):
             plt.show(block = (k == len(env_ref_set)-1 and i == 1))
             
         print(f"Anchor {k}:")
-        print("non-anchor:", env_col, "anchor:", np.vstack([col_a, col_a]))
+        print("non-anchor:")
+        print(env_col)
+        print("anchor:")
+        print(np.vstack([col_a, col_a]))
 
         def col_label_corr(idxs):
             col = [memory_images.imgs[j][label] // 2 for j in idxs]
