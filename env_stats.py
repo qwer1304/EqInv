@@ -154,6 +154,7 @@ def main(args):
     G = 1
 
     ni = 2
+    ttl_width = args.title_width
     for k, indeces in env_ref_set.items(): # over anchors, indeces is a tuple
         fig, ax = plt.subplots(1, ni, figsize=(ni*5, 4))
         if ni == 1:
@@ -197,7 +198,7 @@ def main(args):
 
         ax[i].set_ylabel('Percentage (%)')
         ax[i].set_xlabel('Color')
-        ax[i].set_title(textwrap.fill(f'Split of colors R/G between envs 0/1 for NON-anchor samples for anchor {k}', width=20))
+        ax[i].set_title(textwrap.fill(f'Split of colors R/G between envs 0/1 for NON-anchor samples for anchor {k}', width=ttl_width))
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels)
         ax[i].legend(loc='center')
@@ -237,7 +238,7 @@ def main(args):
 
         ax[i].set_ylabel('Percentage (%)')
         ax[i].set_xlabel('Color')
-        ax[i].set_title(textwrap.fill(f'Split of colors R/G between envs 0/1 for ALL samples for anchor {k}', width=20))
+        ax[i].set_title(textwrap.fill(f'Split of colors R/G between envs 0/1 for ALL samples for anchor {k}', width=ttl_width))
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels)
         ax[i].legend(loc='center')
@@ -298,6 +299,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--fp', type=str, help='path of cluster file')
     parser.add_argument('--data', type=str, default='./data/DataSets/CMNIST_wcolor/64')
+    parser.add_argument('--title_width', type=int, default=40)
     
     args = parser.parse_args()
     
