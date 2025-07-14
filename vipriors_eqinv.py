@@ -346,24 +346,28 @@ def main():
     # number of images per class when training ip-irm
     assert args.num_shot in ['10', '20', '50']
 
-    directory = f'misc/{args.name}'
-    pattern = 'env_ref_set_*'  # <-- your desired pattern
-    
-    # Find matching files
-    files = glob.glob(os.path.join(directory, pattern))
-    
-    # Sort by modification time
-    files_sorted = sorted(files, key=os.path.getmtime, reverse=True)
-    if files_sorted:
-        fp = files_sorted[0]
-    else:
-        if args.resume:
-            suffix = 'resumed'
-        elif args.pretrain_path is not None and os.path.isfile(args.pretrain_path):
-            suffix = 'pretrained'
+    if args.cluster_path is None:
+        directory = f'misc/{args.name}'
+        pattern = 'env_ref_set_*' 
+
+        # Find matching files
+        files = glob.glob(os.path.join(directory, pattern))
+
+        # Sort by modification time
+        files_sorted = sorted(files, key=os.path.getmtime, reverse=True)
+        if files_sorted:
+            fp = files_sorted[0]
         else:
-            suffix = 'default'
-        fp = os.path.join(directory, 'env_ref_set_' + suffix)
+            if args.resume:
+                suffix = 'resumed'
+            elif args.pretrain_path is not None and os.path.isfile(args.pretrain_path):
+                suffix = 'pretrained'
+            else:
+                suffix = 'default'
+            fp = os.path.join(directory, 'env_ref_set_' + suffix)
+    else:
+        fp = args.cluster_path
+        
     if args.only_cluster or not os.path.exists(fp):
         # Cannot use end="" b/c cal_cosine_distance prints progress bar and overwrites its
         if args.only_cluster:
