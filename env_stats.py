@@ -153,13 +153,13 @@ def main(args):
     G = 1
 
     for k, indeces in env_ref_set.items(): # over anchors, indeces is a tuple
-        fig, ax = plt.subplots(1, 1, figsize=(1*5, 4))
+        fig, ax = plt.subplots(1, 2, figsize=(2*5, 4))
         ax = [ax]
         env_n = [indeces[0].tolist(), indeces[1].tolist()] # "other" samples split between environments
         env_a = list(set(all_idx) - set(env_n[0]) - set(env_n[1])) # anchor samples
 
         i = 0
-        env_col = np.zeros((len(env_ref_set), 2), dtype=int) # (env, col)
+        env_col = np.zeros((len(env_ref_set), 2), dtype=int) # (env, col) - environment x color array
 
         for e in range(env_col.shape[0]):
             env_col[e] = np.array([
@@ -199,53 +199,76 @@ def main(args):
         ax[i].legend(loc='center')
         ax[i].grid(True)
 
-        """
         i += 1
-        col_a = [memory_images.imgs[j][1] // 2 for j in env_a]
+        env_tar = np.zeros((len(env_ref_set), 2), dtype=int) # (env, tar) - environment x target array
 
-        total_a = len(col_a)
-        counts_a = [col_a.count(R), col_a.count(G)]
-        perc_a = [count / total_a * 100 for count in counts_a]
-        perc_tot = [(counts_a[j] + col_tar[j].sum() + col_tar[j].sum()) / (total_a + total_0 + total_1) * 100 for j in range(len(counts_a)) ]
+        for e in range(env_tar.shape[0]):
+            env_tar[e] = np.array([
+                sum([memory_images.imgs[j][label] % 2 == 0 for j in env_n[e]]),
+                sum([memory_images.imgs[j][label] % 2 == 1 for j in env_n[e]])
+            ])
 
-        labels = ['R', 'G']
+        perc = env_tar / env_tar.sum(axis=0, keepdims=True) * 100 # (env, tar)
+        
+        labels = ['0', '1']
         x = np.arange(len(labels))
         width = 0.35
+        colors_hatches = ['blue', 'magenta']
+        if hatches_linewidth_supported:
+            bar = ax[i].bar(x - width/2, perc[0], width, label='env_0', hatch="x", color='lightsteelblue', hatch_linewidth=3.0)
+        else:
+            bar = ax[i].bar(x - width/2, perc[0], width, label='env_0', hatch="x", color='lightsteelblue')
 
-        colors = ['red', 'green']
-        ax[i].bar(x - width/2, perc_a, width, label='anchor', color=colors)
-        colors = ['orangered', 'limegreen']
-        ax[i].bar(x + width/2, perc_tot, width, label='total', color=colors)
+        for j, bc in enumerate(bar):
+            bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
+            bc.stale = True
+
+        if hatches_linewidth_supported:
+            bar = ax[i].bar(x + width/2, perc[1], width, label='env_1', hatch="x", color='orange', hatch_linewidth=3.)
+        else:
+            bar = ax[i].bar(x + width/2, perc[1], width, label='env_1', hatch="x", color='orange')
+
+        for j, bc in enumerate(bar):
+            bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
+            bc.stale = True
 
         ax[i].set_ylabel('Percentage (%)')
-        ax[i].set_xlabel('Color')
-        ax[i].set_title(f'Percentage of colors R/G for anchor {k}')
+        ax[i].set_xlabel('Target')
+        ax[i].set_title(f'Split of target 0/1 between envs 0/1 for anchor {k}')
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels)
-        ax[i].legend()  
+        ax[i].legend(loc='center')
         ax[i].grid(True)
-        """
 
         # How to handle final display or saving
         if is_notebook():
             # In notebook, it automatically displays inline
             pass
         elif is_headless():
-            plt.savefig(f"plot_{k}.png")
+            plt.savefig(f"plot_{i}{k}.png")
             plt.close()  # Close figure to avoid duplicate output and free memory
             print(f"Plot saved to plot{k}.png (headless mode).")
         else:
-            plt.show(block = k == len(env_ref_set)-1)
+            plt.show(block = (k == len(env_ref_set)-1 and i == 1))
 
+        def col_label_corr(idxs):
+            col = [memory_images.imgs[j][label] // 2 for j in idxs]
+            tar = [memory_images.imgs[j][label] % 2 for j in idxs]
+            corr = np.corrcoef(np.array(col0), np.array(tar0))
+            return corr
+
+        idxs = env_n[0]
+        corr0_n = col_label_corr(idxs)
         idxs = env_n[0] + env_a
-        col0 = [memory_images.imgs[j][label] // 2 for j in idxs]
-        tar0 = [memory_images.imgs[j][label] % 2 for j in idxs]
-        corr0 = np.corrcoef(np.array(col0), np.array(tar0))
+        corr0_na = col_label_corr(idxs)
+        
+        idxs = env_n[1]
+        corr1_n = col_label_corr(idxs)
         idxs = env_n[1] + env_a
-        col1 = [memory_images.imgs[j][label] // 2 for j in idxs]
-        tar1 = [memory_images.imgs[j][label] % 2 for j in idxs]
-        corr1 = np.corrcoef(np.array(col1), np.array(tar1))
-        print("Color/Label correlations:", "env 0:", corr0[0,1], "env 1:", corr1[0,1])
+        corr1_na = col_label_corr(idxs)
+
+        print("Color/Label correlations neg:", f'achor: {k}', "env 0:", corr0_n[0,1], "env 1:", corr1_n[0,1])
+        print("Color/Label correlations pos+neg:", f'achor: {k}', "env 0:", corr0_na[0,1], "env 1:", corr1_na[0,1])
 
     train_images = utils.Imagenet_idx(root=data+'/train', transform=None, target_transform=None)
     val_images = utils.Imagenet_idx(root=data+'/val', transform=None, target_transform=None)
