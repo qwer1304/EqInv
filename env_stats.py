@@ -244,7 +244,7 @@ def main(args):
             # In notebook, it automatically displays inline
             pass
         elif is_headless():
-            plt.savefig(f"plot_{i}{k}.png")
+            plt.savefig(f"plot_{k}.png")
             plt.close()  # Close figure to avoid duplicate output and free memory
             print(f"Plot saved to plot{k}.png (headless mode).")
         else:
