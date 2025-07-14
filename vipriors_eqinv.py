@@ -101,7 +101,9 @@ parser.add_argument('--target_transform', type=str, default=None, help='a functi
 # space between columns
 parser.add_argument('--spaces', type=int, default=4, help='spaces between entries in progress print (instead of tab)')
 
-# do only clustering
+# clustering
+parser.add_argument('--cluster_path', type=str, default=None, 
+    help='path to cluster file. None means automatic creation ./misc/<name>/env_ref_set_<resumed|pretrained|default>')
 parser.add_argument('--only_cluster', action="store_true", default=False, help='only do clustering')
 
 # shuffle validation and test datasets
