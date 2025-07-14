@@ -197,7 +197,7 @@ def main(args):
 
         ax[i].set_ylabel('Percentage (%)')
         ax[i].set_xlabel('Color')
-        ax[i].set_title(textwrap.fill(f'Split of colors R/G between envs 0/1 for NON-anchor samples for anchor {k}', width=25))
+        ax[i].set_title(textwrap.fill(f'Split of colors R/G between envs 0/1 for NON-anchor samples for anchor {k}', width=20))
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels)
         ax[i].legend(loc='center')
@@ -237,11 +237,13 @@ def main(args):
 
         ax[i].set_ylabel('Percentage (%)')
         ax[i].set_xlabel('Color')
-        ax[i].set_title(f'Split of colors R/G between envs 0/1 for ALL samples for anchor {k}')
+        ax[i].set_title(textwrap.fill(f'Split of colors R/G between envs 0/1 for ALL samples for anchor {k}', width=20))
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels)
         ax[i].legend(loc='center')
         ax[i].grid(True)
+        
+        plt.tight_layout()
 
         # How to handle final display or saving
         if is_notebook():
