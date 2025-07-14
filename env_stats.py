@@ -256,6 +256,8 @@ def main(args):
             print(f"Plot saved to plot{k}.png (headless mode).")
         else:
             plt.show(block = (k == len(env_ref_set)-1 and i == 1))
+            
+        print(f"Anchor {k}: ", "non-anchor:", env_col, "anchor:", col_a)
 
         def col_label_corr(idxs):
             col = [memory_images.imgs[j][label] // 2 for j in idxs]
