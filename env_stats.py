@@ -259,7 +259,8 @@ def main(args):
         else:
             plt.show(block = (k == len(env_ref_set)-1 and i == 1))
             
-        print(f"Anchor {k}: ", "non-anchor:", env_col, "anchor:", np.concatenate([col_a, col_a], axis=0))
+        print(f"Anchor {k}:")
+        print("non-anchor:", env_col, "anchor:", np.concatenate([col_a, col_a], axis=1))
 
         def col_label_corr(idxs):
             col = [memory_images.imgs[j][label] // 2 for j in idxs]
