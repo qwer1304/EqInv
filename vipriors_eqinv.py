@@ -512,7 +512,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                     output_env, target_num_env, masked_feature_env = torch.cat([output_pos, output_neg_env], dim=0), torch.cat([target_num_pos, target_num_neg_env], dim=0), torch.cat([masked_feature_pos, masked_feature_neg_env], dim=0)
                     masked_feature_env_norm = F.normalize(masked_feature_env, dim=-1)
                     # cont_loss_env is the contrastive loss of this environment
-                    cont_loss_env = args.cont_weight * 
+                    cont_loss_env = args.cont_weight * \
                         info_nce_loss_supervised(masked_feature_env_norm.unsqueeze(1),   # stack of positive and negative samples in this env
                                                  masked_feature_env_norm.size(0),        # their number (batch size)
                                                  temperature=args.temperature, 
@@ -542,7 +542,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
         else:
             loss_erm = criterion(output, target)
         masked_feature_for_globalcont_norm = F.normalize(masked_feature_for_globalcont, dim=-1)
-        loss_cont = args.cont_weight * 
+        loss_cont = args.cont_weight * \
             #                        stack of masked_feature1, masked_feature2. each is: mlp(masked_feature_erm).
             #                        1 and 2 are two copies of augmented image.
             info_nce_loss_supervised(masked_feature_for_globalcont_norm.unsqueeze(1),
