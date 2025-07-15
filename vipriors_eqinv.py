@@ -359,20 +359,27 @@ def main():
 
         # Sort by modification time
         files_sorted = sorted(files, key=os.path.getmtime, reverse=True)
+        fp_exist = None
         if files_sorted:
-            fp = files_sorted[0]
+            fp_exist = files_sorted[0]
+        
+        if args.resume:
+            hash_object = hashlib.sha256(args.resume.encode())
+            hex_dig = hash_object.hexdigest()
+            suffix = hex_dig + '_resumed'
+        elif args.pretrain_path is not None and os.path.isfile(args.pretrain_path):
+            hash_object = hashlib.sha256(args.pretrain_path.encode())
+            hex_dig = hash_object.hexdigest()
+            suffix = hex_dig + '_pretrained'
         else:
-            if args.resume:
-                hash_object = hashlib.sha256(args.resume.encode())
-                hex_dig = hash_object.hexdigest()
-                suffix = hex_dig + '_resumed'
-            elif args.pretrain_path is not None and os.path.isfile(args.pretrain_path):
-                hash_object = hashlib.sha256(args.pretrain_path.encode())
-                hex_dig = hash_object.hexdigest()
-                suffix = hex_dig + '_pretrained'
-            else:
-                suffix = 'default'
-            fp = os.path.join(directory, 'env_ref_set_' + suffix)
+            suffix = 'default'
+        fp_new = os.path.join(directory, 'env_ref_set_' + suffix)
+        
+        if args.only_cluster or not fp_exist:
+            fp = fp_new
+        else fp_exist:
+            fp = fp_exist
+            
     else:
         fp = args.cluster_path
         
@@ -615,6 +622,14 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             batch_time.update(time.time() - end)
             end = time.time()
 
+            """
+            i is the minibatch index. print_freq > 1 (usually 20) is the number of minibatches between print-outs.
+            Each AverageMeter is updated EVERY minibatch, which updates the running average.
+            But, the average is printed out ONLY every print_freq minibatches.
+            So, between prin-outs i and j, there were print_freq-1 updates to the average that
+            weren't printed. This explains the apparent inconsistency of printed averages between
+            successive print-outs.
+            """
             if i % args.print_freq == 0:
                 progress.display(i, args.spaces)
 
