@@ -173,15 +173,18 @@ def info_nce_loss_supervised(features, batch_size, temperature=0.07, base_temper
 
 
 class Model_Imagenet(nn.Module):
-    def __init__(self, feature_dim=128):
+    def __init__(self, feature_dim=128, stl_cifar=False):
         super(Model_Imagenet, self).__init__()
 
         self.f = []
         for name, module in resnet50().named_children():
-            # if name == 'conv1':
-            #     module = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-            # if not isinstance(module, nn.Linear) and not isinstance(module, nn.MaxPool2d):
-            if not isinstance(module, nn.Linear):
+            if stl_cifar:
+                if name == 'conv1':
+                    module = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+                if not isinstance(module, nn.Linear) and not isinstance(module, nn.MaxPool2d):
+                    self.f.append(module)
+            else:
+                if not isinstance(module, nn.Linear):
                 self.f.append(module)
         # encoder
         self.f = nn.Sequential(*self.f)
@@ -201,7 +204,7 @@ class Net(nn.Module):
     def __init__(self, num_class, pretrained_path):
         super(Net, self).__init__()
         # encoder
-        model = Model_Imagenet()
+        model = Model_Imagenet(stl_cifar=True)
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         msg = []
         if pretrained_path is not None and os.path.isfile(pretrained_path):
