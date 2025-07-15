@@ -40,6 +40,7 @@ parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
                     help='model architecture: ' +
                          ' | '.join(model_names) +
                          ' (default: resnet18)')
+parser.add_argumen('--image_class', choices=['ImageNet', 'STL', 'CIFAR'], deafult='ImageNet', 'Image class, default=ImageNet')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
 parser.add_argument('--epochs', default=50, type=int, metavar='N',
@@ -173,12 +174,12 @@ def info_nce_loss_supervised(features, batch_size, temperature=0.07, base_temper
 
 
 class Model_Imagenet(nn.Module):
-    def __init__(self, feature_dim=128, stl_cifar=False):
+    def __init__(self, feature_dim=128, image_class='ImageNet'):
         super(Model_Imagenet, self).__init__()
 
         self.f = []
         for name, module in resnet50().named_children():
-            if stl_cifar:
+            if image_class != 'ImageNet':  # STL, CIFAR
                 if name == 'conv1':
                     module = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
                 if not isinstance(module, nn.Linear) and not isinstance(module, nn.MaxPool2d):
@@ -201,10 +202,10 @@ class Model_Imagenet(nn.Module):
 
 
 class Net(nn.Module):
-    def __init__(self, num_class, pretrained_path):
+    def __init__(self, num_class, pretrained_path, image_class='ImageNet'):
         super(Net, self).__init__()
         # encoder
-        model = Model_Imagenet(stl_cifar=True)
+        model = Model_Imagenet(image_class=image_class)
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         msg = []
         if pretrained_path is not None and os.path.isfile(pretrained_path):
@@ -252,7 +253,7 @@ def main():
 
 
     #################### Model ######################
-    model_base = Net(num_class=args.class_num, pretrained_path=args.pretrain_path)
+    model_base = Net(num_class=args.class_num, pretrained_path=args.pretrain_path, image_class=args.image_class)
     import copy
     ft_fc = copy.deepcopy(model_base.fc)
     model_base.fc = nn.Identity()
