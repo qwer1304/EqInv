@@ -185,7 +185,7 @@ class Model_Imagenet(nn.Module):
                     self.f.append(module)
             else:
                 if not isinstance(module, nn.Linear):
-                self.f.append(module)
+                    self.f.append(module)
         # encoder
         self.f = nn.Sequential(*self.f)
         # projection head
