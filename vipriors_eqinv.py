@@ -377,7 +377,7 @@ def main():
         
         if args.only_cluster or not fp_exist:
             fp = fp_new
-        else fp_exist:
+        else:
             fp = fp_exist
             
     else:
