@@ -267,8 +267,8 @@ def main(args):
         print(conv_a)
         
         print("env vs label:")
-        env_tar = np.array([[np.sum(col_a[0],axis=1), np.sum(env_col[0])],  
-                            [np.sum(col_a[1],axis=1), np.sum(env_col[1])]])
+        env_tar = np.array([[np.sum(col_a[0]), np.sum(env_col[0])],  
+                            [np.sum(col_a[1]), np.sum(env_col[1])]])
         print(env_tar)
                             
         def col_label_corr(idxs):
