@@ -260,11 +260,16 @@ def main(args):
             plt.show(block = (k == len(env_ref_set)-1 and i == 1))
             
         print(f"Anchor {k}:")
-        print("non-anchor:")
+        print("non-anchor: env vs color")
         print(env_col)
-        print("anchor:")
-        print(np.vstack([col_a, col_a]))
-
+        print("anchor: env vs color")
+        conv_a = np.vstack([col_a, col_a])
+        print(conv_a)
+        
+        print("env vs label:")
+        env_tar = np.array([[np.sum(col_a[0],axis=1), np.sum(env_col[0]],  
+                            [np.sum(col_a[1],axis=1), np.sum(env_col[1]])   
+                            
         def col_label_corr(idxs):
             col = [memory_images.imgs[j][label] // 2 for j in idxs]
             tar = [memory_images.imgs[j][label] % 2 for j in idxs]
