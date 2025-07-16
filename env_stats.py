@@ -263,7 +263,7 @@ def main(args):
         print("non-anchor: env vs color")
         print(env_col)
         print("anchor: env vs color")
-        conv_a = np.vstack([col_a, col_a])
+        col_a = np.vstack([col_a, col_a])
         print(conv_a)
         
         print("env vs label:")
