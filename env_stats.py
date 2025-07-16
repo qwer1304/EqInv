@@ -264,7 +264,7 @@ def main(args):
         print(env_col)
         print("anchor: env vs color")
         col_a = np.vstack([col_a, col_a])
-        print(conv_a)
+        print(col_a)
         
         print("env vs label:")
         env_tar = np.array([[np.sum(col_a[0]), np.sum(env_col[0])],  
