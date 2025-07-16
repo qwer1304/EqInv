@@ -520,9 +520,12 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                     output_neg_env, target_num_neg_env, masked_feature_neg_env = utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg], images_idx_neg, all_samples_env_table, env_idx)
                     # when the number of samples per label is balanced, because the "other" samples are split equally between two environments, we get
                     # imbalance of positive and negative samples.
-                    print('Number of pos and neg samples:', output_pos.size(0), output_neg_env.size(0))
                     # output_env are all samples (positive and negative) of that environment
-                    output_env, target_num_env, masked_feature_env = torch.cat([output_pos, output_neg_env], dim=0), torch.cat([target_num_pos, target_num_neg_env], dim=0), torch.cat([masked_feature_pos, masked_feature_neg_env], dim=0)
+                    rand_idx = torch.randperm(output_pos.size(0)[:min(output_pos.size(0), output_neg_env.size(0))]
+                    output_pos_sub = output_pos[rand_idx]
+                    target_num_pos_sub = target_num_pos[rand_idx]
+                    masked_feature_pos_sub = masked_feature_pos[rand_idx]
+                    output_env, target_num_env, masked_feature_env = torch.cat([output_pos_sub, output_neg_env], dim=0), torch.cat([target_num_pos_sub, target_num_neg_env], dim=0), torch.cat([masked_feature_pos_sub, masked_feature_neg_env], dim=0)
                     masked_feature_env_norm = F.normalize(masked_feature_env, dim=-1)
                     # cont_loss_env is the contrastive loss of this environment
                     cont_loss_env = args.cont_weight * \
