@@ -521,7 +521,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                     # when the number of samples per label is balanced, because the "other" samples are split equally between two environments, we get
                     # imbalance of positive and negative samples.
                     # output_env are all samples (positive and negative) of that environment
-                    rand_idx = torch.randperm(output_pos.size(0)[:min(output_pos.size(0), output_neg_env.size(0))]
+                    rand_idx = torch.randperm(output_pos.size(0))[:min(output_pos.size(0), output_neg_env.size(0))]
                     output_pos_sub = output_pos[rand_idx]
                     target_num_pos_sub = target_num_pos[rand_idx]
                     masked_feature_pos_sub = masked_feature_pos[rand_idx]
