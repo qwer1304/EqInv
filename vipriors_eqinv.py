@@ -619,6 +619,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
 
             # compute output
             if args.extract_features:
+                    model.module.args.mlp = False
                     masked_feature_erm, _, output = model(images, return_masked_feature=True)
                     masked_feature_erm_list.append(masked_feature_erm)
                     target_list.append(target)
@@ -665,6 +666,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
                 'head_bias':    model.module.fc.bias,    # shape: (num_classes,)
                 'n_classes':    args.class_num,
             }, fp)
+            print(f"Dumped features into {fp}")
             
         progress.display_summary(epoch)
 
