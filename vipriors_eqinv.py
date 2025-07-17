@@ -68,6 +68,7 @@ parser.add_argument('--test-freq', default=None, type=int,
 parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('--evaluate', action="store_true", default=False, help='evaluate?')
+parser.add_argument('--extract_features', action="store_true", help="extract features for post processiin during evaluate")
 parser.add_argument('--name', default=None, type=str,
                     help='exp name')
 parser.add_argument('--clip-a', default=None, type=str,
@@ -609,13 +610,20 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
 
     with torch.no_grad():
         end = time.time()
+        masked_feature_erm_list = []
+        target_list = []
         for i, (images, target, images_idx) in enumerate(val_loader):
 
             images = images.cuda(non_blocking=True)
             target = target.cuda(non_blocking=True)
 
             # compute output
-            output = model(images)
+            if args.extract_features:
+                    masked_feature_erm, _, output = model(images, return_masked_feature=True)
+                    masked_feature_erm_list.append(masked_feature_erm)
+                    target_list.append(target)
+            else:
+                output = model(images)
 
             loss = criterion(output, target)
 
@@ -640,6 +648,24 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             if i % args.print_freq == 0:
                 progress.display(i, args.spaces)
 
+        if masked_feature_erm_list:
+            masked_feature_erm = torch.cat(masked_feature_erm_list, dim=0)
+            target = torch.cat(target_list, dim=0)
+            # Save to file
+            prefix = "test" if "Test" in prefix else "val"
+            directory = f'misc/{args.name}'
+            fp = os.path.join(directory, f"{prefix}_features_dump.pt")       
+            os.makedirs(os.path.dirname(fp), exist_ok=True)
+
+            torch.save({
+                'features': masked_feature_erm,
+                'labels':   target,
+                'model_epoch':  epoch,
+                'head_weights': model.fc.weight,  # shape: (num_classes, embed_dim)
+                'head_bias':    model.fc.bias,    # shape: (num_classes,)
+                'n_classes':    args.class_num,
+            }, fp)
+            
         progress.display_summary(epoch)
 
     return top1.avg

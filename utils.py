@@ -162,7 +162,7 @@ class ResNet_ft_eqinv(nn.Module):
                 if self.args.mlp:
                     return self.mlp(masked_feature_erm), masked_feature_inv, output
                 else:
-                    return masked_feature_inv, output
+                    return masked_feature_erm, masked_feature_inv, output
         else:
             return output
 
