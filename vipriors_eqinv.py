@@ -114,9 +114,13 @@ parser.add_argument('--only_cluster', action="store_true", default=False, help='
 parser.add_argument('--val_shuffle', action="store_true", default=False, help='shuffle validation daatase')
 parser.add_argument('--test_shuffle', action="store_true", default=False, help='shuffle test daatase')
 
+# balancing classes across environments
+parser.add_argument('--inv_weight', action="store_true", default=False, help='balance environment classes imbalance by inverse weighting')
+parser.add_argument('--drop_samples_to_balance_classes', action="store_true", default=False, help='balance environment classes imbalance by dropping extra samples')
 
 args = parser.parse_args()
 
+assert not (args.inv_weight and args.drop_samples_to_balance_classes), "Don't use both class balancing methods together"
 best_acc1 = 0
 
 
@@ -125,8 +129,8 @@ supervised contrastive loss
 https://arxiv.org/abs/2004.11362
 https://github.com/HobbitLong/SupContrast
 '''
-def info_nce_loss_supervised(features, batch_size, temperature=0.07, base_temperature=0.07, labels=None, choose_pos=None):
-    ### features    bs * 2 * dim
+def info_nce_loss_supervised(features, batch_size, temperature=0.07, base_temperature=0.07, labels=None, choose_pos=None, weights=None):
+    ### features    (bs, views, dim)
     labels = labels.contiguous().view(-1, 1)
     if labels.shape[0] != batch_size:
         raise ValueError('Num of labels does not match num of features')
@@ -165,6 +169,21 @@ def info_nce_loss_supervised(features, batch_size, temperature=0.07, base_temper
     # loss
     loss = - (temperature / base_temperature) * mean_log_prob_pos
 
+    """
+    # apply weights
+    if weights is not None:
+        weights = weights.repeat_interleave(anchor_count).to(loss.device)  # shape: [batch_size * anchor_count]
+        if choose_pos is None:
+            loss = (weights * loss).sum() / weights.sum()
+        else:
+            weights = weights.view(anchor_count, batch_size)[:, choose_pos]
+            loss = (loss.view(anchor_count, batch_size)[:, choose_pos] * weights).sum() / weights.sum()
+    else:
+        if choose_pos is None:
+            loss = loss.view(anchor_count, batch_size).mean()
+        else:
+            loss = loss.view(anchor_count, batch_size)[:, choose_pos].sum() / choose_pos.sum()
+        """
     if choose_pos is None:
         loss = loss.view(anchor_count, batch_size).mean()
     else:
@@ -469,6 +488,19 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
             images1, images2, target, images_idx = training_items
         images1, images2 = images1.cuda(non_blocking=True), images2.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True)
+        
+        if args.balance_classes
+            # target: shape [batch_size]
+            classes, counts = torch.unique(target, return_counts=True)
+            freq = counts.float() / counts.sum()  # class frequencies
+            inv_freq = 1.0 / freq                 # inverse frequencies
+            class_weights = inv_freq / inv_freq.sum()  # normalize if needed (optional)
+
+            # Assign weight to each sample
+            weights = class_weights[target]  # shape: [batch_size]    
+            weights = weights.to(target.device)
+        else:
+            weights = None
 
         # compute output
         # def forward(self, image, return_feature=False, return_masked_feature=False)
@@ -482,7 +514,9 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
 
         # both augmented images combined 
         masked_feature_for_globalcont, masked_feature, output = torch.cat([masked_feature1, masked_feature2], dim=0), torch.cat([masked_feature_inv1, masked_feature_inv2], dim=0), torch.cat([output1, output2], dim=0)
-        target, images_idx = torch.cat([target, target], dim=0), torch.cat([images_idx, images_idx], dim=0)
+        target, images_idx = torch.cat([target, target], dim=0), torch.cat([images_idx, images_idx], dim=0) # (2B,...)
+        if weights is not None:
+            weights = torch.cat([weights, weights], dim=0)
         images_idx = images_idx.to(target.device)
 
         if args.inv_weight > 0:
@@ -519,13 +553,20 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                 for env_idx in range(len(env_ref_set_class)): # split the negative samples
                     # assign_samples selects the negative samples in this environment
                     output_neg_env, target_num_neg_env, masked_feature_neg_env = utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg], images_idx_neg, all_samples_env_table, env_idx)
+                    
                     # when the number of samples per label is balanced, because the "other" samples are split equally between two environments, we get
                     # imbalance of positive and negative samples.
                     # output_env are all samples (positive and negative) of that environment
-                    rand_idx = torch.randperm(output_pos.size(0))[:min(output_pos.size(0), output_neg_env.size(0))]
-                    output_pos_sub = output_pos[rand_idx]
-                    target_num_pos_sub = target_num_pos[rand_idx]
-                    masked_feature_pos_sub = masked_feature_pos[rand_idx]
+                    if args.drop_samples_to_balance_classes:
+                        rand_idx = torch.randperm(output_pos.size(0))[:min(output_pos.size(0), output_neg_env.size(0))]
+                        output_pos_sub = output_pos[rand_idx]
+                        target_num_pos_sub = target_num_pos[rand_idx]
+                        masked_feature_pos_sub = masked_feature_pos[rand_idx]
+                    else:
+                        output_pos_sub = output_pos
+                        target_num_pos_sub = target_num_pos
+                        masked_feature_pos_sub = masked_feature_pos
+                        
                     output_env, target_num_env, masked_feature_env = torch.cat([output_pos_sub, output_neg_env], dim=0), torch.cat([target_num_pos_sub, target_num_neg_env], dim=0), torch.cat([masked_feature_pos_sub, masked_feature_neg_env], dim=0)
                     masked_feature_env_norm = F.normalize(masked_feature_env, dim=-1)
                     # cont_loss_env is the contrastive loss of this environment
@@ -534,7 +575,8 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                                                  masked_feature_env_norm.size(0),        # their number (batch size)
                                                  temperature=args.temperature, 
                                                  labels=target_num_env,                  # labels of these samples
-                                                 choose_pos=target_num_env==class_idx)   # position of positive samples
+                                                 choose_pos=target_num_env==class_idx,   # position of positive samples
+                                                 weights=weights)
 
                     env_nll.append(criterion(output_env, target_num_env)) # nll of this environment appended to list
                     temp_pen.append(cont_loss_env) # contrastive loss of this environment appended to list
