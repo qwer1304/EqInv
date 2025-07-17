@@ -115,12 +115,12 @@ parser.add_argument('--val_shuffle', action="store_true", default=False, help='s
 parser.add_argument('--test_shuffle', action="store_true", default=False, help='shuffle test daatase')
 
 # balancing classes across environments
-parser.add_argument('--inv_weight', action="store_true", default=False, help='balance environment classes imbalance by inverse weighting')
+parser.add_argument('--inv_weight_to_balance_classes', action="store_true", default=False, help='balance environment classes imbalance by inverse weighting')
 parser.add_argument('--drop_samples_to_balance_classes', action="store_true", default=False, help='balance environment classes imbalance by dropping extra samples')
 
 args = parser.parse_args()
 
-assert not (args.inv_weight and args.drop_samples_to_balance_classes), "Don't use both class balancing methods together"
+assert not (args.inv_weight_to_balance_classes and args.drop_samples_to_balance_classes), "Don't use both class balancing methods together"
 best_acc1 = 0
 
 
@@ -489,7 +489,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
         images1, images2 = images1.cuda(non_blocking=True), images2.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True)
         
-        if args.inv_weight:
+        if args.inv_weight_to_balance_classes:
             # target: shape [batch_size]
             classes, counts = torch.unique(target, return_counts=True)
             freq = counts.float() / counts.sum()  # class frequencies
