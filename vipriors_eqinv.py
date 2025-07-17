@@ -661,8 +661,8 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
                 'features': masked_feature_erm,
                 'labels':   target,
                 'model_epoch':  epoch,
-                'head_weights': module.model.fc.weight,  # shape: (num_classes, embed_dim)
-                'head_bias':    module.model.fc.bias,    # shape: (num_classes,)
+                'head_weights': model.module.model.fc.weight,  # shape: (num_classes, embed_dim)
+                'head_bias':    model.module.model.fc.bias,    # shape: (num_classes,)
                 'n_classes':    args.class_num,
             }, fp)
             
