@@ -339,9 +339,9 @@ def main():
 
 
     if args.evaluate:
-        print('eval on vipriors val data')
+        print('eval on val data')
         validate(val_loader, model, criterion, args, epoch=-1, prefix='Val: ')
-        print('eval on vipriors test data')
+        print('eval on test data')
         validate(test_loader, model, criterion, args, epoch=-1, prefix='Test: ')
         return
 
@@ -657,6 +657,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             fp = os.path.join(directory, f"{prefix}_features_dump.pt")       
             os.makedirs(os.path.dirname(fp), exist_ok=True)
 
+            print(model)
             torch.save({
                 'features': masked_feature_erm,
                 'labels':   target,
