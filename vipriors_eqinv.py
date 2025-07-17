@@ -657,14 +657,12 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             fp = os.path.join(directory, f"{prefix}_features_dump.pt")       
             os.makedirs(os.path.dirname(fp), exist_ok=True)
 
-            print(model.module)
-            print(model.module.model)
             torch.save({
                 'features': masked_feature_erm,
                 'labels':   target,
                 'model_epoch':  epoch,
-                'head_weights': model.module.model.fc.weight,  # shape: (num_classes, embed_dim)
-                'head_bias':    model.module.model.fc.bias,    # shape: (num_classes,)
+                'head_weights': model.module.fc.weight,  # shape: (num_classes, embed_dim)
+                'head_bias':    model.module.fc.bias,    # shape: (num_classes,)
                 'n_classes':    args.class_num,
             }, fp)
             
