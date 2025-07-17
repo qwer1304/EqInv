@@ -489,7 +489,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
         images1, images2 = images1.cuda(non_blocking=True), images2.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True)
         
-        if args.balance_classes
+        if args.inv_weight:
             # target: shape [batch_size]
             classes, counts = torch.unique(target, return_counts=True)
             freq = counts.float() / counts.sum()  # class frequencies
