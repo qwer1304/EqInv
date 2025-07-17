@@ -657,7 +657,6 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             fp = os.path.join(directory, f"{prefix}_features_dump.pt")       
             os.makedirs(os.path.dirname(fp), exist_ok=True)
 
-            print(model)
             torch.save({
                 'features': masked_feature_erm,
                 'labels':   target,
