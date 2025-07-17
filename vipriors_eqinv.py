@@ -358,10 +358,14 @@ def main():
 
 
     if args.evaluate:
+        if args.resume:
+            epoch = args.start_epoch
+        else:
+            epoch = -1
         print('eval on val data')
-        validate(val_loader, model, criterion, args, epoch=-1, prefix='Val: ')
+        validate(val_loader, model, criterion, args, epoch=epoch, prefix='Val: ')
         print('eval on test data')
-        validate(test_loader, model, criterion, args, epoch=-1, prefix='Test: ')
+        validate(test_loader, model, criterion, args, epoch=epoch, prefix='Test: ')
         return
 
 
