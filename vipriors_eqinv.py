@@ -591,8 +591,8 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                         masked_feature_pos_sub = masked_feature_pos
                         
                     output_env, target_num_env, masked_feature_env = \
-                        torch.cat([output_pos_sub, output_neg_env], dim=0), 
-                        torch.cat([target_num_pos_sub, target_num_neg_env], dim=0), 
+                        torch.cat([output_pos_sub, output_neg_env], dim=0), \
+                        torch.cat([target_num_pos_sub, target_num_neg_env], dim=0), \
                         torch.cat([masked_feature_pos_sub, masked_feature_neg_env], dim=0)
                     masked_feature_env_norm = F.normalize(masked_feature_env, dim=-1)
                     if weights is not None:
