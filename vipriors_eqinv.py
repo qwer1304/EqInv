@@ -507,9 +507,9 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
 
             # Assign weight to each sample
             weights = class_weights[target]  # shape: [batch_size]    
-            weights = weights.to(target.device)
+            weights = weights.to(target.device, non_blocking=True)
         else:
-            weights = None
+            weights = torch.ones_like(target)
 
         # compute output
         # def forward(self, image, return_feature=False, return_masked_feature=False)
@@ -526,8 +526,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
         # This is due to "Supervised Contrastive Loss" as in the original paper (SupCon).
         masked_feature_for_globalcont, masked_feature, output = torch.cat([masked_feature1, masked_feature2], dim=0), torch.cat([masked_feature_inv1, masked_feature_inv2], dim=0), torch.cat([output1, output2], dim=0)
         target, images_idx = torch.cat([target, target], dim=0), torch.cat([images_idx, images_idx], dim=0) # (2B,...)
-        if weights is not None:
-            weights = torch.cat([weights, weights], dim=0)
+        weights = torch.cat([weights, weights], dim=0)
         images_idx = images_idx.to(target.device)
 
         if args.inv_weight > 0:
@@ -542,12 +541,10 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                 # note that these are positive & negatives samples in the batch NOT split into environments
                 # positiveness/negativeness is determined by sample's label
                 # Note that here positives include ALL positives - the anchor sample hasn't been determined yet.
-                output_pos, target_num_pos, masked_feature_pos =  \
-                    output[mask_pos], target[mask_pos], masked_feature[mask_pos] # get positive and negative samples
-                weights_pos = weights[mask_pos] if weights is not None else None
-                output_neg, images_idx_neg, target_num_neg, masked_feature_neg = \
-                    output[~mask_pos], images_idx[~mask_pos], target[~mask_pos], masked_feature[~mask_pos]
-                weights_neg = weights[~mask_pos] if weights is not None else None
+                output_pos, target_num_pos, masked_feature_pos, weights_pos =  \
+                    output[mask_pos], target[mask_pos], masked_feature[mask_pos], weights[mask_pos] # get positive and negative samples
+                output_neg, images_idx_neg, target_num_neg, masked_feature_neg, weights_neg = \
+                    output[~mask_pos], images_idx[~mask_pos], target[~mask_pos], masked_feature[~mask_pos], weights[~mask_pos]
 
                 # generate the env lookup table
                 """
@@ -568,14 +565,9 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                 # traverse different envs
                 for env_idx in range(len(env_ref_set_class)): # split the negative samples
                     # assign_samples selects the negative samples in this environment
-                    if weights_neg is not None:
-                        output_neg_env, target_num_neg_env, masked_feature_neg_env, weights_neg_env = \
-                            utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg, weights_neg], \
-                                                         images_idx_neg, all_samples_env_table, env_idx)
-                    else:
-                        output_neg_env, target_num_neg_env, masked_feature_neg_env = \
-                            utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg], \
-                                                         images_idx_neg, all_samples_env_table, env_idx)
+                    output_neg_env, target_num_neg_env, masked_feature_neg_env, weights_neg_env = \
+                        utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg, weights_neg], \
+                                                     images_idx_neg, all_samples_env_table, env_idx)
                     
                     # when the number of samples per label is balanced, because the "other" samples are split equally between two environments, we get
                     # imbalance of positive and negative samples.
@@ -590,15 +582,12 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                         target_num_pos_sub = target_num_pos
                         masked_feature_pos_sub = masked_feature_pos
                         
-                    output_env, target_num_env, masked_feature_env = \
+                    output_env, target_num_env, masked_feature_env, weights_env = \
                         torch.cat([output_pos_sub, output_neg_env], dim=0), \
                         torch.cat([target_num_pos_sub, target_num_neg_env], dim=0), \
-                        torch.cat([masked_feature_pos_sub, masked_feature_neg_env], dim=0)
+                        torch.cat([masked_feature_pos_sub, masked_feature_neg_env], dim=0), \
+                        torch.cat([weights_pos, weights_neg_env], dim=0)
                     masked_feature_env_norm = F.normalize(masked_feature_env, dim=-1)
-                    if weights is not None:
-                        weights_env = torch.cat([weights_pos, weights_neg_env], dim=0)
-                    else:
-                        weights_env = None
                     # cont_loss_env is the contrastive loss of this environment
                     cont_loss_env = args.cont_weight * \
                         info_nce_loss_supervised(masked_feature_env_norm.unsqueeze(1),   # stack of positive and negative samples in this env
@@ -726,6 +715,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
         if masked_feature_erm_list:
             masked_feature_erm = torch.cat(masked_feature_erm_list, dim=0)
             target = torch.cat(target_list, dim=0)
+            output = torch.cat(output_list, dim=0)
             # Save to file
             prefix = "test" if "Test" in prefix else "val"
             directory = f'misc/{args.name}'
