@@ -95,6 +95,7 @@ parser.add_argument('--inv_start', type=int, default=0, help='start epoch of inv
 parser.add_argument('--inv_weight', default=1., type=float, help='the weight of invariance')
 parser.add_argument('--mlp', action="store_true", default=False, help='use mlp before the loss and feature?')
 parser.add_argument('--backbone_propagate', action="store_true", default=False, help='whether to propagate inv loss to backbone')
+parser.add_argument('--nonancenvirm', action="store_true", default=False, help='use non-anchor environment IRM for penalty')
 
 # image
 parser.add_argument('--image_size', type=int, default=224, help='image size')
@@ -433,7 +434,10 @@ def main():
         adjust_learning_rate(optimizer, init_lr, epoch, args)
 
         # train for one epoch
-        train_env(train_loader, model, activation_map, env_ref_set, criterion, optimizer, epoch, args)
+        if args.nonancenvirm:
+            train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, criterion, optimizer, epoch, args)
+        else:
+            train_env(train_loader, model, activation_map, env_ref_set, criterion, optimizer, epoch, args)
 
         # evaluate on validation set
         acc1 = validate(val_loader, model, criterion, args, epoch, prefix='Val: ')
@@ -460,6 +464,198 @@ def main():
     utils.write_log('\nThe best Val accuracy: {}'.format(best_acc1), args.log_file, print_=True)
     utils.write_log('\nStart to test on Test Set', args.log_file, print_=True)
     acc1_test = validate(test_loader, model, criterion, args, epoch, prefix='Test: ')
+
+
+def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, criterion, optimizer, epoch, args):
+    batch_time = AverageMeter('Time', ':6.3f')
+    data_time = AverageMeter('Data', ':6.3f')
+    losses = AverageMeter('Loss', ':.4e')
+    losses_cont = AverageMeter('Loss_Cont', ':.4e')
+    losses_inv = AverageMeter('Loss_Inv', ':.4e')
+    top1 = AverageMeter('Acc@1', ':6.2f')
+    top5 = AverageMeter('Acc@5', ':6.2f')
+    LR = AverageMeter('LR', ':6.4f')
+    progress = ProgressMeter(
+        len(train_loader),
+        [batch_time, data_time, losses, losses_cont, losses_inv, top1, top5, LR],
+        prefix="Epoch: [{}]".format(epoch),
+        log_file=args.log_file)
+
+    # switch to train mode
+    model.train()
+
+    all_sample_num = len(train_loader.dataset)
+
+    end = time.time()
+    for i, training_items in enumerate(train_loader):
+        # training_items is a batch
+        
+        # measure data loading time
+        data_time.update(time.time() - end)
+
+        if args.random_aug:
+            images1, images2, images1_hard, images2_hard, target, images_idx = training_items
+            images1_hard, images2_hard = images1_hard.cuda(non_blocking=True), images2_hard.cuda(non_blocking=True)
+        else:
+            images1, images2, target, images_idx = training_items
+        # images1 and images2 are two views (transformations) of the SAME image from the dataset
+        images1, images2 = images1.cuda(non_blocking=True), images2.cuda(non_blocking=True)
+        target = target.cuda(non_blocking=True)
+        
+        if args.inv_weight_to_balance_classes:
+            # target: shape [batch_size]
+            classes, counts = torch.unique(target, return_counts=True)
+            freq = counts.float() / counts.sum()  # class frequencies
+            inv_freq = 1.0 / freq                 # inverse frequencies
+            class_weights = inv_freq / inv_freq.sum()  # normalize if needed (optional)
+
+            # Assign weight to each sample
+            weights = class_weights[target]  # shape: [batch_size]    
+            weights = weights.to(target.device, non_blocking=True)
+        else:
+            weights = torch.ones_like(target)
+
+        # compute output
+        # def forward(self, image, return_feature=False, return_masked_feature=False)
+        # output = self.fc(masked_feature_erm)
+        # return self.mlp(masked_feature_erm), masked_feature_inv, output
+        # masked_feature_inv is detached from backbone
+        masked_feature1, masked_feature_inv1, output1 = model(images1, return_masked_feature=True)
+        masked_feature2, masked_feature_inv2, output2 = model(images2, return_masked_feature=True)
+        if args.random_aug:
+            output_hard = model(torch.cat([images1_hard, images2_hard]))
+
+        # both augmented images combined 
+        # They collapse the two views into a SINGLE one! WHY??????????!!!!!!!!!!!
+        # This is due to "Supervised Contrastive Loss" as in the original paper (SupCon).
+        masked_feature_for_globalcont, masked_feature, output = torch.cat([masked_feature1, masked_feature2], dim=0), torch.cat([masked_feature_inv1, masked_feature_inv2], dim=0), torch.cat([output1, output2], dim=0)
+        target, images_idx = torch.cat([target, target], dim=0), torch.cat([images_idx, images_idx], dim=0) # (2B,...)
+        weights = torch.cat([weights, weights], dim=0)
+        images_idx = images_idx.to(target.device)
+
+        if args.inv_weight > 0:
+            # compute envs for different classes
+            env_neg_nll, env_pen, temp_pen = [], [], []
+            for class_idx in range(args.class_num):
+
+                mask_pos = target==class_idx # choose the specifc positive samples
+                if mask_pos.sum() == 0: # batch has no images from current class
+                    continue
+
+                # note that these are positive & negatives samples in the batch NOT split into environments
+                # positiveness/negativeness is determined by sample's label
+                # Note that here positives include ALL positives - the anchor sample hasn't been determined yet.
+                output_pos, target_num_pos, masked_feature_pos, weights_pos =  \
+                    output[mask_pos], target[mask_pos], masked_feature[mask_pos], weights[mask_pos] # get positive and negative samples
+                output_neg, images_idx_neg, target_num_neg, masked_feature_neg, weights_neg = \
+                    output[~mask_pos], images_idx[~mask_pos], target[~mask_pos], masked_feature[~mask_pos], weights[~mask_pos]
+
+                # generate the env lookup table
+                """
+                    env_ref_set is a dictionary over class labels.
+                    each entry is a tuple over class-environments (K = 2) of sample indices in loader that are assigned to that environment (equal number)
+                    the environments have been precomputed by running the images through the default (pre-trained) model, calculated the (corrected) cosine
+                    distance between the "other" samples and anchor samples, sorting in descending order the distances and splitting the result 50/50 into
+                    two environments.
+                    all_samples_env_table is a table (num_samples in loader, num_samples in class-environment)
+                """
+                env_ref_set_class = env_ref_set[class_idx]
+                # all_sample_num is the number of samples in the dataset before doubling
+                all_samples_env_table = torch.zeros(all_sample_num, len(env_ref_set_class))
+                for env_idx in range(len(env_ref_set_class)):
+                    all_samples_env_table[env_ref_set_class[env_idx], env_idx] = 1  # set "other" samples of current env to 1
+
+                all_samples_env_table = all_samples_env_table.to(output.device)
+                # traverse different envs
+                for env_idx in range(len(env_ref_set_class)): # split the negative samples
+                    # assign_samples selects the negative samples in this environment
+                    output_neg_env, target_num_neg_env, masked_feature_neg_env, weights_neg_env = \
+                        utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg, weights_neg], \
+                                                     images_idx_neg, all_samples_env_table, env_idx)
+                    
+                    # when the number of samples per label is balanced, because the "other" samples are split equally between two environments, we get
+                    # imbalance of positive and negative samples.
+                    # output_env are all samples (positive and negative) of that environment
+                    if args.drop_samples_to_balance_classes:
+                        rand_idx = torch.randperm(output_pos.size(0))[:min(output_pos.size(0), output_neg_env.size(0))]
+                        output_pos_sub = output_pos[rand_idx]
+                        target_num_pos_sub = target_num_pos[rand_idx]
+                        masked_feature_pos_sub = masked_feature_pos[rand_idx]
+                    else:
+                        output_pos_sub = output_pos
+                        target_num_pos_sub = target_num_pos
+                        masked_feature_pos_sub = masked_feature_pos
+                        
+                    output_env, target_num_env, masked_feature_env, weights_env = \
+                        torch.cat([output_pos_sub, output_neg_env], dim=0), \
+                        torch.cat([target_num_pos_sub, target_num_neg_env], dim=0), \
+                        torch.cat([masked_feature_pos_sub, masked_feature_neg_env], dim=0), \
+                        torch.cat([weights_pos, weights_neg_env], dim=0)
+                    masked_feature_env_norm = F.normalize(masked_feature_env, dim=-1)
+                    # cont_loss_env is the contrastive loss of this environment
+                    cont_loss_env = args.cont_weight * \
+                        info_nce_loss_supervised(masked_feature_env_norm.unsqueeze(1),   # stack of positive and negative samples in this env
+                                                 masked_feature_env_norm.size(0),        # their number (batch size)
+                                                 temperature=args.temperature, 
+                                                 labels=target_num_env,                  # labels of these samples
+                                                 choose_pos=target_num_env==class_idx,   # position of positive samples
+                                                 weights=weights_env)
+
+                    env_neg_nll.append(criterion(output_neg_env, target_num_neg_env)) # nll of "other" in this environment appended to list
+                    temp_pen.append(env_neg_nll[-1]) # loss of this environment appended to list
+
+                env_pen.append(torch.var(torch.stack(temp_pen))) # varaince of losses of the environments appended to list of losses of all classes
+                temp_pen = []
+
+
+            # Invariance Term: mean of variances of contrastive losses of class-environments
+            inv_weight = args.inv_weight if epoch >= args.inv_start else 0.
+            assert args.inv == 'rex'
+            rex_penalty = sum(env_pen) / len(env_pen)
+            loss_inv = inv_weight * rex_penalty
+
+        else:
+            loss_inv = torch.Tensor([0.]).cuda()
+
+
+        # ERM loss
+        if args.random_aug:
+            loss_erm = criterion(output_hard, target)
+        else:
+            loss_erm = criterion(output, target)
+        masked_feature_for_globalcont_norm = F.normalize(masked_feature_for_globalcont, dim=-1)
+        #                            stack of masked_feature1, masked_feature2. each is: mlp(masked_feature_erm).
+        #                            1 and 2 are two copies of augmented image.
+        loss_cont = args.cont_weight * \
+            info_nce_loss_supervised(masked_feature_for_globalcont_norm.unsqueeze(1),
+                                     masked_feature_for_globalcont_norm.size(0), 
+                                     temperature=args.temperature, 
+                                     labels=target)
+
+
+        loss_all = loss_erm + loss_cont + loss_inv
+
+
+        # measure accuracy and record loss
+        acc1, acc5 = accuracy(output, target, topk=(1, 5))
+        losses.update(loss_erm.item(), images1.size(0)+images2.size(0))
+        losses_cont.update(loss_cont.item(), images1.size(0)+images2.size(0))
+        losses_inv.update(loss_inv.item(), images1.size(0)+images2.size(0))
+        top1.update(acc1.item(), images1.size(0)+images2.size(0))
+        top5.update(acc5.item(), images1.size(0)+images2.size(0))
+        LR.update(optimizer.param_groups[0]['lr'])
+
+        # compute gradient and do SGD step
+        optimizer.zero_grad()
+        loss_all.backward()
+        optimizer.step()
+
+        # measure elapsed time
+        batch_time.update(time.time() - end)
+        end = time.time()
+
+        if i % args.print_freq == 0:
+            progress.display(i, args.spaces)
 
 
 def train_env(train_loader, model, activation_map, env_ref_set, criterion, optimizer, epoch, args):
@@ -652,6 +848,199 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
 
         if i % args.print_freq == 0:
             progress.display(i, args.spaces)
+
+
+def train_env_noanchirm(train_loader, model, activation_map, env_ref_set, criterion, optimizer, epoch, args):
+    batch_time = AverageMeter('Time', ':6.3f')
+    data_time = AverageMeter('Data', ':6.3f')
+    losses = AverageMeter('Loss', ':.4e')
+    losses_cont = AverageMeter('Loss_Cont', ':.4e')
+    losses_inv = AverageMeter('Loss_Inv', ':.4e')
+    top1 = AverageMeter('Acc@1', ':6.2f')
+    top5 = AverageMeter('Acc@5', ':6.2f')
+    LR = AverageMeter('LR', ':6.4f')
+    progress = ProgressMeter(
+        len(train_loader),
+        [batch_time, data_time, losses, losses_cont, losses_inv, top1, top5, LR],
+        prefix="Epoch: [{}]".format(epoch),
+        log_file=args.log_file)
+
+    # switch to train mode
+    model.train()
+
+    all_sample_num = len(train_loader.dataset)
+
+    end = time.time()
+    for i, training_items in enumerate(train_loader):
+        # training_items is a batch
+        
+        # measure data loading time
+        data_time.update(time.time() - end)
+
+        if args.random_aug:
+            images1, images2, images1_hard, images2_hard, target, images_idx = training_items
+            images1_hard, images2_hard = images1_hard.cuda(non_blocking=True), images2_hard.cuda(non_blocking=True)
+        else:
+            images1, images2, target, images_idx = training_items
+        # images1 and images2 are two views (transformations) of the SAME image from the dataset
+        images1, images2 = images1.cuda(non_blocking=True), images2.cuda(non_blocking=True)
+        target = target.cuda(non_blocking=True)
+        
+        if args.inv_weight_to_balance_classes:
+            # target: shape [batch_size]
+            classes, counts = torch.unique(target, return_counts=True)
+            freq = counts.float() / counts.sum()  # class frequencies
+            inv_freq = 1.0 / freq                 # inverse frequencies
+            class_weights = inv_freq / inv_freq.sum()  # normalize if needed (optional)
+
+            # Assign weight to each sample
+            weights = class_weights[target]  # shape: [batch_size]    
+            weights = weights.to(target.device, non_blocking=True)
+        else:
+            weights = torch.ones_like(target)
+
+        # compute output
+        # def forward(self, image, return_feature=False, return_masked_feature=False)
+        # output = self.fc(masked_feature_erm)
+        # return self.mlp(masked_feature_erm), masked_feature_inv, output
+        # masked_feature_inv is detached from backbone
+        masked_feature1, masked_feature_inv1, output1 = model(images1, return_masked_feature=True)
+        masked_feature2, masked_feature_inv2, output2 = model(images2, return_masked_feature=True)
+        if args.random_aug:
+            output_hard = model(torch.cat([images1_hard, images2_hard]))
+
+        # both augmented images combined 
+        # They collapse the two views into a SINGLE one! WHY??????????!!!!!!!!!!!
+        # This is due to "Supervised Contrastive Loss" as in the original paper (SupCon).
+        masked_feature_for_globalcont, masked_feature, output = torch.cat([masked_feature1, masked_feature2], dim=0), torch.cat([masked_feature_inv1, masked_feature_inv2], dim=0), torch.cat([output1, output2], dim=0)
+        target, images_idx = torch.cat([target, target], dim=0), torch.cat([images_idx, images_idx], dim=0) # (2B,...)
+        weights = torch.cat([weights, weights], dim=0)
+        images_idx = images_idx.to(target.device)
+
+        if args.inv_weight > 0:
+            # compute envs for different classes
+            env_nll, env_cont_nll, env_pen, temp_pen = [], [], [], []
+            for class_idx in range(args.class_num):
+
+                mask_pos = target==class_idx # choose the specifc positive samples
+                if mask_pos.sum() == 0: # batch has no images from current class
+                    continue
+
+                # note that these are positive & negatives samples in the batch NOT split into environments
+                # positiveness/negativeness is determined by sample's label
+                # Note that here positives include ALL positives - the anchor sample hasn't been determined yet.
+                output_pos, target_num_pos, masked_feature_pos, weights_pos =  \
+                    output[mask_pos], target[mask_pos], masked_feature[mask_pos], weights[mask_pos] # get positive and negative samples
+                output_neg, images_idx_neg, target_num_neg, masked_feature_neg, weights_neg = \
+                    output[~mask_pos], images_idx[~mask_pos], target[~mask_pos], masked_feature[~mask_pos], weights[~mask_pos]
+
+                # generate the env lookup table
+                """
+                    env_ref_set is a dictionary over class labels.
+                    each entry is a tuple over class-environments (K = 2) of sample indices in loader that are assigned to that environment (equal number)
+                    the environments have been precomputed by running the images through the default (pre-trained) model, calculated the (corrected) cosine
+                    distance between the "other" samples and anchor samples, sorting in descending order the distances and splitting the result 50/50 into
+                    two environments.
+                    all_samples_env_table is a table (num_samples in loader, num_samples in class-environment)
+                """
+                env_ref_set_class = env_ref_set[class_idx]
+                # all_sample_num is the number of samples in the dataset before doubling
+                all_samples_env_table = torch.zeros(all_sample_num, len(env_ref_set_class))
+                for env_idx in range(len(env_ref_set_class)):
+                    all_samples_env_table[env_ref_set_class[env_idx], env_idx] = 1  # set "other" samples of current env to 1
+
+                all_samples_env_table = all_samples_env_table.to(output.device)
+                # traverse different envs
+                for env_idx in range(len(env_ref_set_class)): # split the negative samples
+                    # assign_samples selects the negative samples in this environment
+                    output_neg_env, target_num_neg_env, masked_feature_neg_env, weights_neg_env = \
+                        utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg, weights_neg], \
+                                                     images_idx_neg, all_samples_env_table, env_idx)
+                    
+                    # when the number of samples per label is balanced, because the "other" samples are split equally between two environments, we get
+                    # imbalance of positive and negative samples.
+                    # output_env are all samples (positive and negative) of that environment
+                    if args.drop_samples_to_balance_classes:
+                        rand_idx = torch.randperm(output_pos.size(0))[:min(output_pos.size(0), output_neg_env.size(0))]
+                        output_pos_sub = output_pos[rand_idx]
+                        target_num_pos_sub = target_num_pos[rand_idx]
+                        masked_feature_pos_sub = masked_feature_pos[rand_idx]
+                    else:
+                        output_pos_sub = output_pos
+                        target_num_pos_sub = target_num_pos
+                        masked_feature_pos_sub = masked_feature_pos
+                        
+                    output_env, target_num_env, masked_feature_env, weights_env = \
+                        torch.cat([output_pos_sub, output_neg_env], dim=0), \
+                        torch.cat([target_num_pos_sub, target_num_neg_env], dim=0), \
+                        torch.cat([masked_feature_pos_sub, masked_feature_neg_env], dim=0), \
+                        torch.cat([weights_pos, weights_neg_env], dim=0)
+                    masked_feature_env_norm = F.normalize(masked_feature_env, dim=-1)
+                    # cont_loss_env is the contrastive loss of this environment
+                    #cont_loss_env = args.cont_weight * \
+                    #    info_nce_loss_supervised(masked_feature_env_norm.unsqueeze(1),   # stack of positive and negative samples in this env
+                    #                             masked_feature_env_norm.size(0),        # their number (batch size)
+                    #                             temperature=args.temperature, 
+                    #                             labels=target_num_env,                  # labels of these samples
+                    #                             choose_pos=target_num_env==class_idx,   # position of positive samples
+                    #                             weights=weights_env)
+
+                    env_nll.append(criterion(output_env, target_num_env)) # nll of this environment appended to list
+                    temp_pen.append(cont_loss_env) # contrastive loss of this environment appended to list
+
+                env_pen.append(torch.var(torch.stack(temp_pen))) # varaince of contrastive losses of the environments appended to list of posses of all classes
+                temp_pen = []
+
+
+            # Invariance Term: mean of variances of contrastive losses of class-environments
+            inv_weight = args.inv_weight if epoch >= args.inv_start else 0.
+            assert args.inv == 'rex'
+            rex_penalty = sum(env_pen) / len(env_pen)
+            loss_inv = inv_weight * rex_penalty
+
+        else:
+            loss_inv = torch.Tensor([0.]).cuda()
+
+
+        # ERM loss
+        if args.random_aug:
+            loss_erm = criterion(output_hard, target)
+        else:
+            loss_erm = criterion(output, target)
+        masked_feature_for_globalcont_norm = F.normalize(masked_feature_for_globalcont, dim=-1)
+        #                            stack of masked_feature1, masked_feature2. each is: mlp(masked_feature_erm).
+        #                            1 and 2 are two copies of augmented image.
+        loss_cont = args.cont_weight * \
+            info_nce_loss_supervised(masked_feature_for_globalcont_norm.unsqueeze(1),
+                                     masked_feature_for_globalcont_norm.size(0), 
+                                     temperature=args.temperature, 
+                                     labels=target)
+
+
+        loss_all = loss_erm + loss_cont + loss_inv
+
+
+        # measure accuracy and record loss
+        acc1, acc5 = accuracy(output, target, topk=(1, 5))
+        losses.update(loss_erm.item(), images1.size(0)+images2.size(0))
+        losses_cont.update(loss_cont.item(), images1.size(0)+images2.size(0))
+        losses_inv.update(loss_inv.item(), images1.size(0)+images2.size(0))
+        top1.update(acc1.item(), images1.size(0)+images2.size(0))
+        top5.update(acc5.item(), images1.size(0)+images2.size(0))
+        LR.update(optimizer.param_groups[0]['lr'])
+
+        # compute gradient and do SGD step
+        optimizer.zero_grad()
+        loss_all.backward()
+        optimizer.step()
+
+        # measure elapsed time
+        batch_time.update(time.time() - end)
+        end = time.time()
+
+        if i % args.print_freq == 0:
+            progress.display(i, args.spaces)
+
 
 
 
