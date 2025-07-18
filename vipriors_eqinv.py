@@ -658,6 +658,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
         end = time.time()
         masked_feature_erm_list = []
         target_list = []
+        output_list = []
         for i, (images, target, images_idx) in enumerate(val_loader):
 
             images = images.cuda(non_blocking=True)
@@ -669,6 +670,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
                     masked_feature_erm, _, output = model(images, return_masked_feature=True)
                     masked_feature_erm_list.append(masked_feature_erm)
                     target_list.append(target)
+                    output_list.append(output)
             else:
                 output = model(images)
 
@@ -707,6 +709,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             torch.save({
                 'features': masked_feature_erm,
                 'labels':   target,
+                'logits':   output,
                 'model_epoch':  epoch,
                 'head_weights': model.module.fc.weight,  # shape: (num_classes, embed_dim)
                 'head_bias':    model.module.fc.bias,    # shape: (num_classes,)
