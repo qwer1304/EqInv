@@ -130,14 +130,15 @@ https://arxiv.org/abs/2004.11362
 https://github.com/HobbitLong/SupContrast
 '''
 def info_nce_loss_supervised(features, batch_size, temperature=0.07, base_temperature=0.07, labels=None, choose_pos=None, weights=None):
-    ### features    (bs, views, dim)
+    ### features (bs, views, dim)
+    # Here, views = 1, but there're 2N samples ("multiviewed batch")
     labels = labels.contiguous().view(-1, 1)
     if labels.shape[0] != batch_size:
         raise ValueError('Num of labels does not match num of features')
-    mask = torch.eq(labels, labels.T).float().cuda()
+    mask = torch.eq(labels, labels.T).float().cuda() # (bs,bs). Matrix of 1 for inputs that have the SAME label
 
-    contrast_count = features.shape[1]
-    contrast_feature = torch.cat(torch.unbind(features, dim=1), dim=0)
+    contrast_count = features.shape[1] # number of views, here - 1
+    contrast_feature = torch.cat(torch.unbind(features, dim=1), dim=0) # here - does nothing
 
     anchor_feature = contrast_feature
     anchor_count = contrast_count
@@ -149,18 +150,28 @@ def info_nce_loss_supervised(features, batch_size, temperature=0.07, base_temper
     logits = anchor_dot_contrast - logits_max.detach()
 
     # tile mask
-    mask = mask.repeat(anchor_count, contrast_count)
+    mask = mask.repeat(anchor_count, contrast_count) # here - does nothing
     # mask-out self-contrast cases
+    """
+    Writes all values from the tensor 'src' into 't' at the indices specified in the 'index' tensor. 
+    For each value in 'src', its output index is specified by its index in 'src' for dimension != 'dim' 
+    and by the corresponding value in 'index' for dimension = 'dim'.    
+    """
+    """
+    Here: Writes 0 into 'all ones' tensor (bs,bs) at the indices specified in the tensor
+    [0,batch_size * anchor_count) = [0, batch_size).
+    So, since 't' is 2D and 'dim'==1, it writes 0 into the diagonal.
+    """
     logits_mask = torch.scatter(
-        torch.ones_like(mask),
-        1,
-        torch.arange(batch_size * anchor_count).view(-1, 1).cuda(),
-        0
+        torch.ones_like(mask),                                       # t - tensor to apply scatter to
+        1,                                                           # dim
+        torch.arange(batch_size * anchor_count).view(-1, 1).cuda(),  # index
+        0                                                            # src
     )
-    mask = mask * logits_mask
+    mask = mask * logits_mask # remove self contrast from mask
 
     # compute log_prob
-    exp_logits = torch.exp(logits) * logits_mask
+    exp_logits = torch.exp(logits) * logits_mask # exponentiated logits w/o selfs
     log_prob = logits - torch.log(exp_logits.sum(1, keepdim=True))
 
     # compute mean of log-likelihood over positive
@@ -169,7 +180,6 @@ def info_nce_loss_supervised(features, batch_size, temperature=0.07, base_temper
     # loss
     loss = - (temperature / base_temperature) * mean_log_prob_pos
 
-    """
     # apply weights
     if weights is not None:
         weights = weights.repeat_interleave(anchor_count).to(loss.device)  # shape: [batch_size * anchor_count]
@@ -183,14 +193,8 @@ def info_nce_loss_supervised(features, batch_size, temperature=0.07, base_temper
             loss = loss.view(anchor_count, batch_size).mean()
         else:
             loss = loss.view(anchor_count, batch_size)[:, choose_pos].sum() / choose_pos.sum()
-        """
-    if choose_pos is None:
-        loss = loss.view(anchor_count, batch_size).mean()
-    else:
-        loss = loss.view(anchor_count, batch_size)[:, choose_pos].sum() / choose_pos.sum()
 
     return loss
-
 
 
 class Model_Imagenet(nn.Module):
@@ -490,6 +494,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
             images1_hard, images2_hard = images1_hard.cuda(non_blocking=True), images2_hard.cuda(non_blocking=True)
         else:
             images1, images2, target, images_idx = training_items
+        # images1 and images2 are two views (transformations) of the SAME image from the dataset
         images1, images2 = images1.cuda(non_blocking=True), images2.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True)
         
@@ -517,6 +522,8 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
             output_hard = model(torch.cat([images1_hard, images2_hard]))
 
         # both augmented images combined 
+        # They collapse the two views into a SINGLE one! WHY??????????!!!!!!!!!!!
+        # This is due to "Supervised Contrastive Loss" as in the original paper (SupCon).
         masked_feature_for_globalcont, masked_feature, output = torch.cat([masked_feature1, masked_feature2], dim=0), torch.cat([masked_feature_inv1, masked_feature_inv2], dim=0), torch.cat([output1, output2], dim=0)
         target, images_idx = torch.cat([target, target], dim=0), torch.cat([images_idx, images_idx], dim=0) # (2B,...)
         if weights is not None:
@@ -524,7 +531,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
         images_idx = images_idx.to(target.device)
 
         if args.inv_weight > 0:
-            # compute env for different class
+            # compute envs for different classes
             env_nll, env_cont_nll, env_pen, temp_pen = [], [], [], []
             for class_idx in range(args.class_num):
 
@@ -534,6 +541,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
 
                 # note that these are positive & negatives samples in the batch NOT split into environments
                 # positiveness/negativeness is determined by sample's label
+                # Note that here positives include ALL positives - the anchor sample hasn't been determined yet.
                 output_pos, target_num_pos, masked_feature_pos = output[mask_pos], target[mask_pos], masked_feature[mask_pos] # get positive and negative samples
                 output_neg, images_idx_neg, target_num_neg, masked_feature_neg = output[~mask_pos], images_idx[~mask_pos], target[~mask_pos], masked_feature[~mask_pos]
 
@@ -547,13 +555,13 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                     all_samples_env_table is a table (num_samples in loader, num_samples in class-environment)
                 """
                 env_ref_set_class = env_ref_set[class_idx]
-                # all_sample_num is the number of samples in the dataset
+                # all_sample_num is the number of samples in the dataset before doubling
                 all_samples_env_table = torch.zeros(all_sample_num, len(env_ref_set_class))
                 for env_idx in range(len(env_ref_set_class)):
                     all_samples_env_table[env_ref_set_class[env_idx], env_idx] = 1  # set "other" samples of current env to 1
 
                 all_samples_env_table = all_samples_env_table.to(output.device)
-                # traversal different env
+                # traverse different envs
                 for env_idx in range(len(env_ref_set_class)): # split the negative samples
                     # assign_samples selects the negative samples in this environment
                     output_neg_env, target_num_neg_env, masked_feature_neg_env = utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg], images_idx_neg, all_samples_env_table, env_idx)
