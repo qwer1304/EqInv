@@ -545,7 +545,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                 output_pos, target_num_pos, masked_feature_pos =  \
                     output[mask_pos], target[mask_pos], masked_feature[mask_pos] # get positive and negative samples
                 weights_pos = weights[mask_pos] if weights is not None else None
-                output_neg, images_idx_neg, target_num_neg, masked_feature_neg = \ 
+                output_neg, images_idx_neg, target_num_neg, masked_feature_neg = \
                     output[~mask_pos], images_idx[~mask_pos], target[~mask_pos], masked_feature[~mask_pos]
                 weights_neg = weights[~mask_pos] if weights is not None else None
 
