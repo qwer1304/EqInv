@@ -186,7 +186,6 @@ def info_nce_loss_supervised(features, batch_size, temperature=0.07, base_temper
         if choose_pos is None:
             loss = (weights * loss).sum() / weights.sum()
         else:
-            print('an:',anchor_count, 'batch:',batch_size, 'choose:',len(choose_pos), 'weights:',weights.size(), 'labels:',len(labels))
             weights = weights.view(anchor_count, batch_size)[:, choose_pos]
             loss = (loss.view(anchor_count, batch_size)[:, choose_pos] * weights).sum() / weights.sum()
     else:
@@ -543,8 +542,12 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                 # note that these are positive & negatives samples in the batch NOT split into environments
                 # positiveness/negativeness is determined by sample's label
                 # Note that here positives include ALL positives - the anchor sample hasn't been determined yet.
-                output_pos, target_num_pos, masked_feature_pos = output[mask_pos], target[mask_pos], masked_feature[mask_pos] # get positive and negative samples
-                output_neg, images_idx_neg, target_num_neg, masked_feature_neg = output[~mask_pos], images_idx[~mask_pos], target[~mask_pos], masked_feature[~mask_pos]
+                output_pos, target_num_pos, masked_feature_pos =  \
+                    output[mask_pos], target[mask_pos], masked_feature[mask_pos] # get positive and negative samples
+                weights_pos = weights[mask_pos] if weights is not None else None
+                output_neg, images_idx_neg, target_num_neg, masked_feature_neg = \ 
+                    output[~mask_pos], images_idx[~mask_pos], target[~mask_pos], masked_feature[~mask_pos]
+                weights_neg = weights[~mask_pos] if weights is not None else None
 
                 # generate the env lookup table
                 """
@@ -565,7 +568,14 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                 # traverse different envs
                 for env_idx in range(len(env_ref_set_class)): # split the negative samples
                     # assign_samples selects the negative samples in this environment
-                    output_neg_env, target_num_neg_env, masked_feature_neg_env = utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg], images_idx_neg, all_samples_env_table, env_idx)
+                    if weights_neg is not None:
+                        output_neg_env, target_num_neg_env, masked_feature_neg_env, weights_neg_env = \
+                            utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg, weights_neg], \
+                                                         images_idx_neg, all_samples_env_table, env_idx)
+                   else:
+                        output_neg_env, target_num_neg_env, masked_feature_neg_env = \
+                            utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg], \
+                                                         images_idx_neg, all_samples_env_table, env_idx)
                     
                     # when the number of samples per label is balanced, because the "other" samples are split equally between two environments, we get
                     # imbalance of positive and negative samples.
@@ -580,8 +590,15 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                         target_num_pos_sub = target_num_pos
                         masked_feature_pos_sub = masked_feature_pos
                         
-                    output_env, target_num_env, masked_feature_env = torch.cat([output_pos_sub, output_neg_env], dim=0), torch.cat([target_num_pos_sub, target_num_neg_env], dim=0), torch.cat([masked_feature_pos_sub, masked_feature_neg_env], dim=0)
+                    output_env, target_num_env, masked_feature_env = \
+                        torch.cat([output_pos_sub, output_neg_env], dim=0), 
+                        torch.cat([target_num_pos_sub, target_num_neg_env], dim=0), 
+                        torch.cat([masked_feature_pos_sub, masked_feature_neg_env], dim=0)
                     masked_feature_env_norm = F.normalize(masked_feature_env, dim=-1)
+                    if weights is not None:
+                        weights_env = torch.cat([weights_pos, weights_neg_env], dim=0)
+                    else:
+                        weights_env = None
                     # cont_loss_env is the contrastive loss of this environment
                     cont_loss_env = args.cont_weight * \
                         info_nce_loss_supervised(masked_feature_env_norm.unsqueeze(1),   # stack of positive and negative samples in this env
@@ -589,7 +606,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                                                  temperature=args.temperature, 
                                                  labels=target_num_env,                  # labels of these samples
                                                  choose_pos=target_num_env==class_idx,   # position of positive samples
-                                                 weights=weights)
+                                                 weights=weights_env)
 
                     env_nll.append(criterion(output_env, target_num_env)) # nll of this environment appended to list
                     temp_pen.append(cont_loss_env) # contrastive loss of this environment appended to list
