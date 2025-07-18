@@ -186,6 +186,7 @@ def info_nce_loss_supervised(features, batch_size, temperature=0.07, base_temper
         if choose_pos is None:
             loss = (weights * loss).sum() / weights.sum()
         else:
+            print(anchor_count, batch_size, len(choose_pos), weights.size)
             weights = weights.view(anchor_count, batch_size)[:, choose_pos]
             loss = (loss.view(anchor_count, batch_size)[:, choose_pos] * weights).sum() / weights.sum()
     else:
