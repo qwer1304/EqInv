@@ -572,7 +572,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                         output_neg_env, target_num_neg_env, masked_feature_neg_env, weights_neg_env = \
                             utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg, weights_neg], \
                                                          images_idx_neg, all_samples_env_table, env_idx)
-                   else:
+                    else:
                         output_neg_env, target_num_neg_env, masked_feature_neg_env = \
                             utils_cluster.assign_samples([output_neg, target_num_neg, masked_feature_neg], \
                                                          images_idx_neg, all_samples_env_table, env_idx)
