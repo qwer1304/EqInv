@@ -439,7 +439,7 @@ def main():
 
         # train for one epoch
         if args.nonancenvirm:
-            criterion_tuple = (criterion, criterion, criterion_label_smoothing)
+            criterion_tuple = (criterion, criterion, criterion_label_smoothed)
             train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, criterion_tuple, optimizer, epoch, args)
         else:
             train_env(train_loader, model, activation_map, env_ref_set, criterion, optimizer, epoch, args)
