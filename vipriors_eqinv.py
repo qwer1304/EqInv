@@ -628,9 +628,9 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
 
         # ERM loss
         if args.random_aug:
-            loss_erm = criterion(output_hard, target)
+            loss_erm = criterion_ERM(output_hard, target)
         else:
-            loss_erm = criterion(output, target)
+            loss_erm = criterion_ERM(output, target)
         masked_feature_for_globalcont_norm = F.normalize(masked_feature_for_globalcont, dim=-1)
         #                            stack of masked_feature1, masked_feature2. each is: mlp(masked_feature_erm).
         #                            1 and 2 are two copies of augmented image.
