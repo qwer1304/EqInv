@@ -120,7 +120,7 @@ parser.add_argument('--inv_weight_to_balance_classes', action="store_true", defa
 parser.add_argument('--drop_samples_to_balance_classes', action="store_true", default=False, help='balance environment classes imbalance by dropping extra samples')
 
 # loss
-parser.add_argument('--label_smooting', type=float, default=0.1, help='label smoothing')
+parser.add_argument('--label_smoothing', type=float, default=0.1, help='label smoothing')
 
 args = parser.parse_args()
 
@@ -295,7 +295,7 @@ def main():
     init_lr = args.lr * args.batch_size / 256
     print('lr scale to %.2f' %(init_lr))
     criterion = nn.CrossEntropyLoss().cuda()
-    criterion_label_smoothed = nn.CrossEntropyLoss(args.label_smoothing).cuda()
+    criterion_label_smoothed = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing).cuda()
     if args.adam:
         init_lr = 1e-3
         optimizer = torch.optim.Adam(model.parameters(), lr=init_lr, weight_decay=0.)
