@@ -119,6 +119,9 @@ parser.add_argument('--test_shuffle', action="store_true", default=False, help='
 parser.add_argument('--inv_weight_to_balance_classes', action="store_true", default=False, help='balance environment classes imbalance by inverse weighting')
 parser.add_argument('--drop_samples_to_balance_classes', action="store_true", default=False, help='balance environment classes imbalance by dropping extra samples')
 
+# loss
+parser.add_argument('--label_smooting', type=float, default=0.1, help='label smoothing')
+
 args = parser.parse_args()
 
 assert not (args.inv_weight_to_balance_classes and args.drop_samples_to_balance_classes), "Don't use both class balancing methods together"
@@ -292,6 +295,7 @@ def main():
     init_lr = args.lr * args.batch_size / 256
     print('lr scale to %.2f' %(init_lr))
     criterion = nn.CrossEntropyLoss().cuda()
+    criterion_label_smoothed = nn.CrossEntropyLoss(args.label_smoothing).cuda()
     if args.adam:
         init_lr = 1e-3
         optimizer = torch.optim.Adam(model.parameters(), lr=init_lr, weight_decay=0.)
@@ -435,7 +439,8 @@ def main():
 
         # train for one epoch
         if args.nonancenvirm:
-            train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, criterion, optimizer, epoch, args)
+            criterion_tuple = (criterion, criterion, criterion_label_smoothing)
+            train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, criterion_tuple, optimizer, epoch, args)
         else:
             train_env(train_loader, model, activation_map, env_ref_set, criterion, optimizer, epoch, args)
 
@@ -466,7 +471,8 @@ def main():
     acc1_test = validate(test_loader, model, criterion, args, epoch, prefix='Test: ')
 
 
-def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, criterion, optimizer, epoch, args):
+def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, criterion_tuple, optimizer, epoch, args):
+    criterion_ERM, criterion_cont, criterion_inv = criterion_tuple
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
@@ -593,6 +599,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                         torch.cat([weights_pos, weights_neg_env], dim=0)
                     masked_feature_env_norm = F.normalize(masked_feature_env, dim=-1)
                     # cont_loss_env is the contrastive loss of this environment
+                    """
                     cont_loss_env = args.cont_weight * \
                         info_nce_loss_supervised(masked_feature_env_norm.unsqueeze(1),   # stack of positive and negative samples in this env
                                                  masked_feature_env_norm.size(0),        # their number (batch size)
@@ -600,8 +607,9 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                                                  labels=target_num_env,                  # labels of these samples
                                                  choose_pos=target_num_env==class_idx,   # position of positive samples
                                                  weights=weights_env)
+                    """
 
-                    env_neg_nll.append(criterion(output_neg_env, target_num_neg_env)) # nll of "other" in this environment appended to list
+                    env_neg_nll.append(criterion_inv(output_neg_env, target_num_neg_env)) # nll of "other" in this environment appended to list
                     temp_pen.append(env_neg_nll[-1]) # loss of this environment appended to list
 
                 env_pen.append(torch.var(torch.stack(temp_pen))) # varaince of losses of the environments appended to list of losses of all classes
