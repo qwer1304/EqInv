@@ -96,6 +96,7 @@ parser.add_argument('--inv_weight', default=1., type=float, help='the weight of 
 parser.add_argument('--mlp', action="store_true", default=False, help='use mlp before the loss and feature?')
 parser.add_argument('--backbone_propagate', action="store_true", default=False, help='whether to propagate inv loss to backbone')
 parser.add_argument('--nonancenvirm', action="store_true", default=False, help='use non-anchor environment IRM for penalty')
+parser.add_argument('--pos_samples_fraction_in_inv', default=0., type=float, help='[0..1], fraction of positive samples to use in inv loss calculation')
 
 # image
 parser.add_argument('--image_size', type=int, default=224, help='image size')
@@ -306,12 +307,15 @@ def main():
 
 
     # optionally resume from a checkpoint
+    best_acc1 = 0
+    best_epoch = 0
     if args.resume:
         if os.path.isfile(args.resume):
             print("=> loading checkpoint '{}'".format(args.resume))
             checkpoint = torch.load(args.resume)
             args.start_epoch = checkpoint['epoch']
             best_acc1 = checkpoint['best_acc1']
+            best_epoch = checkpoint['best_epoch']
             model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
             print("=> loaded checkpoint '{}' (epoch {})"
@@ -432,7 +436,6 @@ def main():
         env_ref_set = torch.load(fp)
         print(f'Cluster {fp} loaded.')
 
-    best_acc1 = 0
     for epoch in range(args.start_epoch, args.epochs):
 
         adjust_learning_rate(optimizer, init_lr, epoch, args)
@@ -451,16 +454,19 @@ def main():
         if args.test_freq is not None and epoch % args.test_freq == 0:
             acc1_test = validate(test_loader, model, criterion, args, epoch, prefix='Test: ')
 
-        # remember best acc@1 and save checkpoint
+        # remember best acc@1 & best epoch and save checkpoint
         is_best = acc1 > best_acc1
-        best_acc1 = max(acc1, best_acc1)
-
+        if is_best:
+            best_acc1 = acc1
+            best_epoch = epoch + 1
+            
         save_checkpoint({
-            'epoch': epoch + 1,
-            'arch': args.arch,
-            'state_dict': model.state_dict(),
-            'best_acc1': best_acc1,
-            'optimizer': optimizer.state_dict(),
+            'epoch':        epoch + 1,
+            'arch':         args.arch,
+            'state_dict':   model.state_dict(),
+            'best_acc1':    best_acc1,
+            'best_epoch':   best_epoch,
+            'optimizer':    optimizer.state_dict(),
         }, is_best, args, filename='{}/{}/checkpoint.pth.tar'.format(args.save_root, args.name))
 
     if args.opt_mask:
@@ -592,6 +598,12 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                         target_num_pos_sub = target_num_pos
                         masked_feature_pos_sub = masked_feature_pos
                         
+                    # retain only args.pos_samples_to_use fraction of positive samples
+                    rand_idx = torch.randperm(output_pos_sub.size(0))[:int(output_pos_sub.size(0)*args.pos_samples_fraction_in_inv)]
+                    output_pos_sub = output_pos_sub[rand_idx]
+                    target_num_pos_sub = target_num_pos_sub[rand_idx]
+                    masked_feature_pos_sub = masked_feature_pos_sub[rand_idx]
+                    
                     output_env, target_num_env, masked_feature_env, weights_env = \
                         torch.cat([output_pos_sub, output_neg_env], dim=0), \
                         torch.cat([target_num_pos_sub, target_num_neg_env], dim=0), \
@@ -609,7 +621,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                                                  weights=weights_env)
                     """
 
-                    env_neg_nll.append(criterion_inv(output_neg_env, target_num_neg_env)) # nll of "other" in this environment appended to list
+                    env_neg_nll.append(criterion_inv(output_env, target_num_env)) # nll of "other" in this environment appended to list
                     temp_pen.append(env_neg_nll[-1]) # loss of this environment appended to list
 
                 env_pen.append(torch.var(torch.stack(temp_pen))) # varaince of losses of the environments appended to list of losses of all classes
