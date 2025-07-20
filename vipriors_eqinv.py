@@ -1230,7 +1230,7 @@ def adjust_learning_rate(optimizer, init_lr, epoch, args):
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
     lr = init_lr
     for milestone in args.schedule:
-        lr *= 0.1 if epoch >= milestone else 1.
+        lr *= 0.1 if epoch >= milestone else lr.
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
