@@ -12,7 +12,7 @@ from tqdm.auto import tqdm
 import numpy as np
 import random
 import shutil
-
+from functools import partial
 
 class MultipleDomainDataset:
     N_STEPS = 5001           # Default, subclasses may override
@@ -184,21 +184,39 @@ def main(args):
                         for fp in [files[i] for i in val_idx]:
                             output_dir = os.path.join(save_dir_val, label + '/')
                             shutil.move(fp, output_dir)
-                                               
+
+def bounded_type(x, min_val, max_val, cast_type=float):
+    try:
+        val = cast_type(x)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{x} is not a valid {cast_type.__name__}")
+    if not (min_val <= val <= max_val):
+        raise argparse.ArgumentTypeError(
+            f"{val} not in range [{min_val}, {max_val}]"
+        )
+    return val                                              
             
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Create CMNIST dataset')
+    parser = argparse.ArgumentParser()
+
+    # Global args
     parser.add_argument('--output_dir', type=str, default="./data/DataSets/CMNIST/")
     parser.add_argument('--target_image_size', type=int, default=224)
-    parser.add_argument('--val_domain', type=int)
-    parser.add_argument('--test_domain', type=int)
+    parser.add_argument('--test_domain', type=int, required=True)
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--include_color', action='store_true', help='include color in label')
-    parser.add_argument('--env_names', type=str, nargs='+', help='environment names')
-    parser.add_argument('--env_corr', type=float, nargs='+', help='environment label/color correlations')
-    parser.add_argument('--label_noise', type=float, default=0.25, help='label noise')
-    parser.add_argument('--select_method', type=str, choices=['loo', 'train'], help='model selection method')
-    parser.add_argument('--train_split', type=float, help='fraction of images for training; rest for validation')
+    parser.add_argument('--include_color', action='store_true')
+    parser.add_argument('--env_names', type=str, nargs='+', required=True, help='Cannot be last before selection method')
+    parser.add_argument('--env_corr', type=partial(bounded_type, min_val=0.0, max_val=1.0, cast_type=float), nargs='+', required=True, help='Cannot be last before selection method')
+    parser.add_argument('--label_noise', type=float, default=0.25)
+
+    subparsers = parser.add_subparsers(dest='select_method', required=True)
+
+    train_parser = subparsers.add_parser('train')
+    train_parser.add_argument('--train_split', type=partial(bounded_type, min_val=0.0, max_val=1.0, cast_type=float), required=True)
+
+    loo_parser = subparsers.add_parser('loo')
+    loo_parser.add_argument('--val_domain', type=int, required=True)
+
     args = parser.parse_args()
     
     assert len(args.env_names) == len(args.env_corr), 'Number of environment names must match that of correlations'

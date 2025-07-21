@@ -111,6 +111,7 @@ parser.add_argument('--spaces', type=int, default=4, help='spaces between entrie
 parser.add_argument('--cluster_path', type=str, default=None, 
     help='path to cluster file. None means automatic creation ./misc/<name>/env_ref_set_<resumed|pretrained|default>')
 parser.add_argument('--only_cluster', action="store_true", default=False, help='only do clustering')
+parser.add_argument('--cluster_temp', type=float, default=0.1, help='temperature for clusteing') 
 
 # shuffle validation and test datasets
 parser.add_argument('--val_shuffle', action="store_true", default=False, help='shuffle validation daatase')
@@ -426,7 +427,7 @@ def main():
             print('Recalculation of cluster file requested... ')
         else:
             print('No cluster file, creating... ')
-        env_ref_set = utils_cluster.cal_cosine_distance(model, memory_loader, args.class_num, temperature=0.1, anchor_class=None, class_debias_logits=True)
+        env_ref_set = utils_cluster.cal_cosine_distance(model, memory_loader, args.class_num, temperature=args.cluster_temp, anchor_class=None, class_debias_logits=True)
         os.makedirs(os.path.dirname(fp), exist_ok=True)
         torch.save(env_ref_set, fp)
         print(f'cluster {fp} ready!') 
