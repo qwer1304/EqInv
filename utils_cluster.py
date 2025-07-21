@@ -50,7 +50,7 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
         candidate_dataloader = data.DataLoader(SampleFeature(candidate_feature), batch_size=1024, shuffle=False, num_workers=0)
         for candidate_feature_batch in candidate_dataloader:
             sim_matrix = torch.mm(candidate_feature_batch, anchor_feature) # (Nc,Na)
-            # sim_matrix = (sim_matrix / temperature).exp()
+            sim_matrix = (sim_matrix / temperature).exp()
             sim_batch = sim_matrix.mean(dim=-1)
             sim_all.append(sim_batch)
         sim_all = torch.cat(sim_all, dim=0).contiguous() # (Nc, Na)
