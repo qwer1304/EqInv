@@ -11,6 +11,7 @@ import pandas as pd
 from tqdm.auto import tqdm
 import numpy as np
 import random
+import shutil
 
 
 class MultipleDomainDataset:
@@ -120,6 +121,8 @@ def main(args):
     os.makedirs(save_dir_val, exist_ok=True)
     save_dir_testgt = output_dir + 'testgt/'
     os.makedirs(save_dir_testgt, exist_ok=True)
+    save_dir_all = output_dir + 'all/'
+    os.makedirs(save_dir_all, exist_ok=True)
     
     # datasets is a list of datasets, each one x, y
     datasets = ColoredMNIST(save_dir_raw, args)
@@ -128,21 +131,27 @@ def main(args):
     create_labels_dir(save_dir_train, labels)
     create_labels_dir(save_dir_val, labels)
     create_labels_dir(save_dir_testgt, labels)
+    create_labels_dir(save_dir_all, labels)
 
     for d, dataset in tqdm(enumerate(datasets), leave=False, total=len(datasets)):
         for idx, (img_tensor, label) in tqdm(enumerate(dataset), desc=f"Dataset {datasets.environments[d]}", leave=False, total=len(dataset)):
             # image_tensor and label are a single example
-            if d == args.test_domain:
+            if d == args.test_domain:                # test images come from a given domain
                 save_dir_domain = save_dir_testgt
-            elif d == args.val_domain:
-                save_dir_domain = save_dir_val
+                
+            # assign train and val images depending on the selection method
+            if args.select_method == 'loo':
+                if d == args.val_domain:
+                    save_dir_domain = save_dir_val
+                else:
+                    save_dir_domain = save_dir_train
             else:
-                save_dir_domain = save_dir_train
+                save_dir_domain = save_dir_all
                 
             save_dir_label = save_dir_domain + str(label.item()) + '/'
 
-            # Create filename
-            filename = f"{idx:05d}.jpg"
+            # Create filename. Offset image names by domain number to get name uniqueness
+            filename = f"{idx*len(datasets) + d:06d}.jpg"
             filepath = os.path.join(save_dir_label, filename)
 
             if args.target_image_size is not None:
@@ -154,7 +163,29 @@ def main(args):
 
             # Save using PIL
             pil_img.save(filepath, "JPEG")
-
+            
+        
+    if args.select_method == 'train':
+        with os.scandir(save_dir_all) as labdir:    # labdir is directory of per-label sub-directories
+            for lab in labdir:                      # lab is a label sub-directory
+                if lab.is_dir():
+                    with os.scandir(lab) as fs:     # fs are the images of a label
+                        files = [f for f in fs if f.is_file()]
+                        num_files = len(files)
+                        f_idx = np.random.permutation(num_files)
+                        train_num = int(num_files*args.train_split)
+                        train_idx = f_idx[:train_num]
+                        val_idx = f_idx[train_num:]
+                        
+                        label = os.path.basename(lab.path)
+                        for fp in [files[i] for i in train_idx]:
+                            output_dir = os.path.join(save_dir_train, label + '/')
+                            shutil.move(fp, output_dir)
+                        for fp in [files[i] for i in val_idx]:
+                            output_dir = os.path.join(save_dir_val, label + '/')
+                            shutil.move(fp, output_dir)
+                                               
+            
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create CMNIST dataset')
     parser.add_argument('--output_dir', type=str, default="./data/DataSets/CMNIST/")
@@ -166,6 +197,8 @@ if __name__ == "__main__":
     parser.add_argument('--env_names', type=str, nargs='+', help='environment names')
     parser.add_argument('--env_corr', type=float, nargs='+', help='environment label/color correlations')
     parser.add_argument('--label_noise', type=float, default=0.25, help='label noise')
+    parser.add_argument('--select_method', type=str, choices=['loo', 'train'], help='model selection method')
+    parser.add_argument('--train_split', type=float, help='fraction of images for training; rest for validation')
     args = parser.parse_args()
     
     assert len(args.env_names) == len(args.env_corr), 'Number of environment names must match that of correlations'
