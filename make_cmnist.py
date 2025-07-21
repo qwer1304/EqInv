@@ -136,9 +136,6 @@ def main(args):
     for d, dataset in tqdm(enumerate(datasets), leave=False, total=len(datasets)):
         for idx, (img_tensor, label) in tqdm(enumerate(dataset), desc=f"Dataset {datasets.environments[d]}", leave=False, total=len(dataset)):
             # image_tensor and label are a single example
-            if d == args.test_domain:                # test images come from a given domain
-                save_dir_domain = save_dir_testgt
-                
             # assign train and val images depending on the selection method
             if args.select_method == 'loo':
                 if d == args.val_domain:
@@ -147,7 +144,10 @@ def main(args):
                     save_dir_domain = save_dir_train
             else:
                 save_dir_domain = save_dir_all
-                
+
+            if d == args.test_domain:                # test images come from a given domain
+                save_dir_domain = save_dir_testgt
+                                
             save_dir_label = save_dir_domain + str(label.item()) + '/'
 
             # Create filename. Offset image names by domain number to get name uniqueness
@@ -162,8 +162,6 @@ def main(args):
             pil_img = transforms.ToPILImage()(img_tensor)
 
             # Save using PIL
-            if d == args.test_domain:  
-                print(f'Saving test image, fp={filepath}')
             pil_img.save(filepath, "JPEG")
             
         
