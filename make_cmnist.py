@@ -162,6 +162,8 @@ def main(args):
             pil_img = transforms.ToPILImage()(img_tensor)
 
             # Save using PIL
+            if d == args.test_domain:  
+                print(f'Saving test image, fp={filepath}')
             pil_img.save(filepath, "JPEG")
             
         
