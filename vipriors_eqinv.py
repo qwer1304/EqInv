@@ -594,22 +594,25 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                         output_pos_sub = output_pos[rand_idx]
                         target_num_pos_sub = target_num_pos[rand_idx]
                         masked_feature_pos_sub = masked_feature_pos[rand_idx]
+                        weights_pos_sub = weights_pos[rand_idx]
                     else:
                         output_pos_sub = output_pos
                         target_num_pos_sub = target_num_pos
                         masked_feature_pos_sub = masked_feature_pos
+                        weights_pos_sub = weights_pos
                         
                     # retain only args.pos_samples_to_use fraction of positive samples
                     rand_idx = torch.randperm(output_pos_sub.size(0))[:int(output_pos_sub.size(0)*args.pos_samples_fraction_in_inv)]
                     output_pos_sub = output_pos_sub[rand_idx]
                     target_num_pos_sub = target_num_pos_sub[rand_idx]
                     masked_feature_pos_sub = masked_feature_pos_sub[rand_idx]
+                    weights_pos_sub = weights_pos_sub[rand_idx]
                     
                     output_env, target_num_env, masked_feature_env, weights_env = \
                         torch.cat([output_pos_sub, output_neg_env], dim=0), \
                         torch.cat([target_num_pos_sub, target_num_neg_env], dim=0), \
                         torch.cat([masked_feature_pos_sub, masked_feature_neg_env], dim=0), \
-                        torch.cat([weights_pos, weights_neg_env], dim=0)
+                        torch.cat([weights_pos_sub, weights_neg_env], dim=0)
                     masked_feature_env_norm = F.normalize(masked_feature_env, dim=-1)
                     # cont_loss_env is the contrastive loss of this environment
                     """
@@ -622,7 +625,9 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                                                  weights=weights_env)
                     """
 
-                    env_neg_nll.append(criterion_inv(output_env, target_num_env)) # nll of "other" in this environment appended to list
+                    # nll of "other" in this environment appended to list
+                    # NON-MASKED features
+                    env_neg_nll.append(criterion_inv(output_env, target_num_env)) 
                     temp_pen.append(env_neg_nll[-1]) # loss of this environment appended to list
 
                 env_pen.append(torch.var(torch.stack(temp_pen))) # varaince of losses of the environments appended to list of losses of all classes
