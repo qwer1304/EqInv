@@ -172,6 +172,7 @@ def main(args):
         # number of samples for color c in environment e
         env_col = np.zeros((K, 2), dtype=int) # (env, col) - environment x color array
 
+        print(type(env_n[0]))
         for e in range(env_col.shape[0]):
             env_col[e] = np.array([
                 sum([memory_images.imgs[j][label] // 2 == R for j in env_n[e]]),
