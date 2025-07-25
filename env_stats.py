@@ -275,7 +275,7 @@ def main(args):
 
         for e in range(K):
             idxs_a = r.choice(len(env_a), int(fraction*len(env_a)), replace=False) 
-            idxs = env_n[e] + env_a[:idxs_a]
+            idxs = env_n[e] + env_a[idxs_a]
             corre_na.append(col_label_corr(idxs))
         
         print(f"Color/Label correlations {fraction}*pos+neg:", f'anchor: {k}', [f"env {e}: {corre_na[e]}" for e in range(K)])
