@@ -163,6 +163,7 @@ def main(args):
         # Flatten the tuple of lists into one set
         env_n_flat = set().union(*env_n)
         # Compute the set difference
+        print(env_lens, len(all_idx), len(env_n_flat))
         env_a = list(set(all_idx) - env_n_flat)  # anchor samples
         assert len(env_a) + env_lens.sum() == len(all_idx), f"anchor {k}: number of samples don't add up"
 
