@@ -271,14 +271,13 @@ def main(args):
             else:
                 return np.corrcoef(x, y)[0, 1]
 
-        """
         corre_na = []
         for e in range(K):
             idxs = env_n[e] + env_a
             corre_na.append(col_label_corr(idxs))
         
         print("Color/Label correlations pos+neg:", f'anchor: {k}', [f"env {e}: {corre_na[e]}" for e in range(K)])
-        """
+
     train_images = utils.Imagenet_idx(root=data+'/train', transform=None, target_transform=None)
     val_images = utils.Imagenet_idx(root=data+'/val', transform=None, target_transform=None)
     test_images = utils.Imagenet_idx(root=data+'/testgt', transform=None, target_transform=None)
