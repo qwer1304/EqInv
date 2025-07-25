@@ -146,7 +146,7 @@ def main(args):
     
     # total number of samples
     print(f'-----------Total number of samples------------')
-    print(9, 'Total by color:', (count_c0_a0 + count_c0_a1 + count_c1_a0 + count_c1_a1) / 2, 'Total # samples:', len(memory_images))
+    print(9, 'Total by color:', int((count_c0_a0 + count_c0_a1 + count_c1_a0 + count_c1_a1) / 2), 'Total # samples:', len(memory_images))
     
     R = 0
     G = 1
