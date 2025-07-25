@@ -84,8 +84,9 @@ parser.add_argument('--num_shot', type=str, default='50', help='the number of sh
 parser.add_argument('--random_aug', action="store_true", default=False, help='random_aug?')
 
 #### add mask
-parser.add_argument('--activat_type', type=str, default='sigmoid', help='type of activation')
-parser.add_argument('--opt_mask', action="store_true", default=False, help='also optimizer the mask?')
+parser.add_argument('--activat_type', type=str, default='sigmoid', choices=['sigmoid', 'ident', 'gumbel'], help='type of activation in mask')
+parser.add_argument('--opt_mask', action="store_true", default=False, help='optimize the mask')
+
 parser.add_argument('--pretrain_model', action="store_true", default=False, help='use pretrain model?')
 parser.add_argument('--pretrain_path', type=str, default=None, help='the path of pretrain model')
 
@@ -110,8 +111,11 @@ parser.add_argument('--spaces', type=int, default=4, help='spaces between entrie
 # clustering
 parser.add_argument('--cluster_path', type=str, default=None, 
     help='path to cluster file. None means automatic creation ./misc/<name>/env_ref_set_<resumed|pretrained|default>')
-parser.add_argument('--only_cluster', action="store_true", default=False, help='only do clustering')
+parser.add_argument('--only_cluster', action="store_true", help='only do clustering')
 parser.add_argument('--cluster_temp', type=float, default=0.1, help='temperature for clusteing') 
+parser.add_argument('--cluster_save_dist', action="store_true", help='save cluster distances in ./misc/<name>/env_ref_dist')
+parser.add_argument('--num_clusters', type=int, default=2, help='number of custer K') 
+
 
 # shuffle validation and test datasets
 parser.add_argument('--val_shuffle', action="store_true", default=False, help='shuffle validation daatase')
@@ -288,7 +292,10 @@ def main():
     ft_fc = copy.deepcopy(model_base.fc)
     model_base.fc = nn.Identity()
 
-    mask_layer = torch.rand(ft_fc.weight.size(1),device="cuda")
+    if args.opt_mask:
+        mask_layer = torch.rand(ft_fc.weight.size(1),device="cuda")
+    else:
+        mask_layer = torch.ones(ft_fc.weight.size(1),device="cuda")   
     model = utils.ResNet_ft_eqinv(model_base, ft_fc, mask_layer=mask_layer, args=args)
     model = torch.nn.DataParallel(model).cuda()
 
@@ -421,13 +428,22 @@ def main():
     else:
         fp = args.cluster_path
         
+    fp_dist = os.path.join(directory, 'env_ref_dist')
+    
     if args.only_cluster or not os.path.exists(fp):
         # Cannot use end="" b/c cal_cosine_distance prints progress bar and overwrites its
         if args.only_cluster:
             print('Recalculation of cluster file requested... ')
         else:
             print('No cluster file, creating... ')
-        env_ref_set = utils_cluster.cal_cosine_distance(model, memory_loader, args.class_num, temperature=args.cluster_temp, anchor_class=None, class_debias_logits=True)
+        if args.cluster_save_dist:
+            env_ref_set, dist = utils_cluster.cal_cosine_distance(model, memory_loader, args.class_num, temperature=args.cluster_temp, 
+                anchor_class=None, class_debias_logits=True, return_dist=True, K=args.num_clusters)
+            torch.save(dist, fp_dist)
+            print(f"Cluster distances saved in {fp_dist}")
+        else:
+            env_ref_set = utils_cluster.cal_cosine_distance(model, memory_loader, args.class_num, temperature=args.cluster_temp, 
+                anchor_class=None, class_debias_logits=True, K=args.num_clusters)
         os.makedirs(os.path.dirname(fp), exist_ok=True)
         torch.save(env_ref_set, fp)
         print(f'cluster {fp} ready!') 
@@ -532,7 +548,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
         # def forward(self, image, return_feature=False, return_masked_feature=False)
         # output = self.fc(masked_feature_erm)
         # return self.mlp(masked_feature_erm), masked_feature_inv, output
-        # masked_feature_inv is detached from backbone
+        # masked_feature_inv is detached from backbone (unless backbone_propagate flag is ON)
         masked_feature1, masked_feature_inv1, output1 = model(images1, return_masked_feature=True)
         masked_feature2, masked_feature_inv2, output2 = model(images2, return_masked_feature=True)
         if args.random_aug:
@@ -615,6 +631,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                         torch.cat([weights_pos_sub, weights_neg_env], dim=0)
                     masked_feature_env_norm = F.normalize(masked_feature_env, dim=-1)
                     # cont_loss_env is the contrastive loss of this environment
+                    # masked_feature_env = mask(model(x)) <-------- NOTE: mlp is NOT applied!!!!!!
                     """
                     cont_loss_env = args.cont_weight * \
                         info_nce_loss_supervised(masked_feature_env_norm.unsqueeze(1),   # stack of positive and negative samples in this env
@@ -626,7 +643,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                     """
 
                     # nll of "other" in this environment appended to list
-                    # NON-MASKED features
+                    # output = fc(mask(model(x))
                     env_nll.append(criterion_inv(output_env, target_num_env)) 
                     temp_pen.append(env_nll[-1]) # loss of this environment appended to list
 
@@ -645,10 +662,12 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
 
 
         # ERM loss
+        # output = fc(mask(model(x))
         if args.random_aug:
             loss_erm = criterion_ERM(output_hard, target)
         else:
             loss_erm = criterion_ERM(output, target)
+        # masked_feature_for_globalcont is mlp(mask * model(x)) 
         masked_feature_for_globalcont_norm = F.normalize(masked_feature_for_globalcont, dim=-1)
         #                            stack of masked_feature1, masked_feature2. each is: mlp(masked_feature_erm).
         #                            1 and 2 are two copies of augmented image.
@@ -815,6 +834,7 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                         torch.cat([weights_pos_sub, weights_neg_env], dim=0)
                     masked_feature_env_norm = F.normalize(masked_feature_env, dim=-1)
                     # cont_loss_env is the contrastive loss of this environment
+                    # masked_feature_env = mask(model(x)) <-------- NOTE: mlp is NOT applied!!!!!!
                     cont_loss_env = args.cont_weight * \
                         info_nce_loss_supervised(masked_feature_env_norm.unsqueeze(1),   # stack of positive and negative samples in this env
                                                  masked_feature_env_norm.size(0),        # their number (batch size)
@@ -841,10 +861,12 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
 
 
         # ERM loss
+        # output = fc(mask(model(x))
         if args.random_aug:
             loss_erm = criterion(output_hard, target)
         else:
             loss_erm = criterion(output, target)
+        # masked_feature_for_globalcont is mlp(mask * model(x)) 
         masked_feature_for_globalcont_norm = F.normalize(masked_feature_for_globalcont, dim=-1)
         #                            stack of masked_feature1, masked_feature2. each is: mlp(masked_feature_erm).
         #                            1 and 2 are two copies of augmented image.

@@ -6,7 +6,7 @@ from torch import nn, optim, autograd
 
 
 
-def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=None, class_debias_logits=False, mask=None):
+def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=None, class_debias_logits=False, mask=None, K=2, return_dist=False):
     net.eval()
     total_top1, total_top5, total_num, feature_bank, target_bank, idx_bank = 0.0, 0.0, 0, [], [], []
 
@@ -49,12 +49,12 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
         sim_all = []
         candidate_dataloader = data.DataLoader(SampleFeature(candidate_feature), batch_size=1024, shuffle=False, num_workers=0)
         for candidate_feature_batch in candidate_dataloader:
-            sim_matrix = torch.mm(candidate_feature_batch, anchor_feature) # (Nc,Na)
+            sim_matrix = torch.mm(candidate_feature_batch, anchor_feature) # (bNc,Na)
             if temperature > 0:
                 sim_matrix = (sim_matrix / temperature).exp()
-            sim_batch = sim_matrix.mean(dim=-1)
+            sim_batch = sim_matrix.mean(dim=-1) # (bNc,)
             sim_all.append(sim_batch)
-        sim_all = torch.cat(sim_all, dim=0).contiguous() # (Nc, Na)
+        sim_all = torch.cat(sim_all, dim=0).contiguous() # (Nc,)
 
 
         if class_debias_logits: # calculate a class-wise debias logits to remove the digits similarity effect
@@ -74,16 +74,24 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
         # Returns the indices that sort a tensor along a given dimension (-1) in descending order by value.
         sim_sort = torch.argsort(sim_all, descending=True)
         sim_sort = sim_sort.to(candidate_mask.device)
-        candidate_idx_sort = idx_bank[candidate_mask][sim_sort]
+        candidate_idx_sort = idx_bank[candidate_mask][sim_sort] # "other" samples' ids sorted
 
         # import pdb
         # pdb.set_trace()
 
+        """
+        Attempts to split a tensor into the specified number of chunks.
+        If the tensor size along the given dimension 'dim' is divisible by chunks, 
+        all returned chunks will be the same size. If the tensor size along the given dimension 'dim' 
+        is not divisible by chunks, all returned chunks will be the same size, except the last one. 
+        If such division is not possible, this function may return fewer than the specified number of chunks.
+        """
         env_set[anchor_class_] = torch.chunk(candidate_idx_sort, 2) # 2 environments
 
-    return env_set
-
-
+    if return_dist:
+        return env_set, sim_sort
+    else:
+        return env_set
 
 
 class SampleFeature(data.Dataset):
