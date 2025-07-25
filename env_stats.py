@@ -218,40 +218,16 @@ def main(args):
         labels = ['R', 'G']
         label = np.arange(len(labels))
         width = 0.35
-        offsets = np.linspace(-width/2, +width/2, num=K, endpoint=True)
+        offset = np.arange(K)
         colors_hatches = ['red', 'lime']
         colors_env = ['lightsteelblue', 'orange']
-        # Plot percentages for both colors for each environment
-
-        print(perc[0])
-        print(perc[1])
-        print(x-width/2)
-        print(x+width/2)
-        exit()
-        if hatches_linewidth_supported:
-            bar = ax[i].bar(x - width/2, perc[0], width, label='env_0', hatch="x", color='lightsteelblue', hatch_linewidth=3.0)
-        else:
-            bar = ax[i].bar(x - width/2, perc[0], width, label='env_0', hatch="x", color='lightsteelblue')
-
-        for j, bc in enumerate(bar):
-            bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
-            bc.stale = True
-
-        if hatches_linewidth_supported:
-            bar = ax[i].bar(x + width/2, perc[1], width, label='env_1', hatch="x", color='orange', hatch_linewidth=3.)
-        else:
-            bar = ax[i].bar(x + width/2, perc[1], width, label='env_1', hatch="x", color='orange')
-
-        for j, bc in enumerate(bar):
-            bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
-            bc.stale = True
-
 
         for e in range(K):
+            # plot percentages for all labels for env 'e'
             if hatches_linewidth_supported:
-                bar = ax[i].bar(label + offsets[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)], hatch_linewidth=3.0)
+                bar = ax[i].bar(offset[e]*width + label - width/2, perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)], hatch_linewidth=3.0)
             else:
-                bar = ax[i].bar(label + offsets[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)])
+                bar = ax[i].bar(offset[e]*width + label - width/2, perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)])
 
             for j, bc in enumerate(bar):
                 bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
