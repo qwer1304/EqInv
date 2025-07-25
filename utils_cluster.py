@@ -72,6 +72,8 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
 
 
         # Returns the indices that sort a tensor along a given dimension (-1) in descending order by value.
+        # The bigger the value (more positive) the more similar the value is. The smaller the value (more negative),
+        # the more dissimilar the value is.
         sim_sort = torch.argsort(sim_all, descending=True)
         sim_sort = sim_sort.to(candidate_mask.device)
         candidate_idx_sort = idx_bank[candidate_mask][sim_sort] # "other" samples' ids sorted
