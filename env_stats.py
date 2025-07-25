@@ -287,6 +287,7 @@ def main(args):
             else:
                 return np.corrcoef(x, y)[0, 1]
 
+        exit()
         corre_na = []
         for e in range(K):
             idxs = env_n[e] + env_a
