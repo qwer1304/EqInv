@@ -164,7 +164,7 @@ def main(args):
         env_n_flat = set().union(*env_n)
         # Compute the set difference
         env_a = list(set(all_idx) - env_n_flat)  # anchor samples
-        print(env_lens, len(all_idx), len(env_n_flat), len(env_a))
+        print(env_n_flat)
         assert len(env_a) + env_lens.sum() == len(all_idx), f"anchor {k}: number of samples don't add up"
 
         i = 0
