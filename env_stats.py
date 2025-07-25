@@ -183,18 +183,23 @@ def main(args):
         labels = ['R', 'G']
         x = np.arange(len(labels))
         width = 0.35
-        widths = np.linspace(-width/2, +width/2, num=K, endpoint=True)
+        offsets = np.linspace(0, K, num=K, endpoint=False)
         colors_hatches = ['red', 'lime']
         colors_env = ['lightsteelblue', 'orange', 'magenta', 'mediumpurple', 'olive']
+        bar = []
         for e in range(K):
             if hatches_linewidth_supported:
-                bar = ax[i].bar(x + widths[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)], hatch_linewidth=3.0)
+                bar.append(ax[i].bar(x - offsets[e]*width, perc[e], width, label=f'env_{e}', 
+                    hatch="x", color=colors_env[e % len(colors_env)], hatch_linewidth=3.0))
+                bar.append(ax[i].bar(x + offsets[e]*width, perc[e], width, label=f'env_{e}', 
+                    hatch="x", color=colors_env[e % len(colors_env)], hatch_linewidth=3.0))
             else:
-                bar = ax[i].bar(x + widths[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)])
+                bar.append(ax[i].bar(x - offsets[e]*width, perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)]))
+                bar.append(ax[i].bar(x + offsets[e]*width, perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)]))
 
-            for j, bc in enumerate(bar):
-                bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
-                bc.stale = True
+        for j, range(len(bar)):
+            bar[j]._hatch_color = mpl.colors.to_rgba(colors_hatches[j % len(colors_hatches)])
+            bar[j].stale = True
 
         ax[i].set_ylabel('Percentage (%)')
         ax[i].set_xlabel('Color')
@@ -217,14 +222,14 @@ def main(args):
         labels = ['R', 'G']
         x = np.arange(len(labels))
         width = 0.35
-        widths = np.linspace(-width/2, +width/2, num=K, endpoint=True)
+        offsets = np.linspace(-width/2, +width/2, num=K, endpoint=True)
         colors_hatches = ['red', 'lime']
         colors_env = ['lightsteelblue', 'orange']
         for e in range(K):
             if hatches_linewidth_supported:
-                bar = ax[i].bar(x + widths[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)], hatch_linewidth=3.0)
+                bar = ax[i].bar(x + offsets[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)], hatch_linewidth=3.0)
             else:
-                bar = ax[i].bar(x + widths[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)])
+                bar = ax[i].bar(x + offsets[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)])
 
             for j, bc in enumerate(bar):
                 bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
