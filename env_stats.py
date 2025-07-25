@@ -62,7 +62,7 @@ def main(args):
     fp = args.fp
     env_ref_set = torch.load(fp)
     K = len(env_ref_set[0])
-    print(K)
+    print(env_ref_set.items())
     data = args.data
     memory_images = utils.Imagenet_idx(root=data + '/train', transform=None, target_transform=None)
     num_samples = len(memory_images)
