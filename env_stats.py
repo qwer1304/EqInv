@@ -197,7 +197,7 @@ def main(args):
                 bar.append(ax[i].bar(x - offsets[e]*width, perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)]))
                 bar.append(ax[i].bar(x + offsets[e]*width, perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)]))
 
-        for j, range(len(bar)):
+        for j in range(len(bar)):
             bar[j]._hatch_color = mpl.colors.to_rgba(colors_hatches[j % len(colors_hatches)])
             bar[j].stale = True
 
