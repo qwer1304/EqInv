@@ -89,7 +89,7 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
         env_set[anchor_class_] = torch.chunk(candidate_idx_sort, 2) # 2 environments
 
     if return_dist:
-        return env_set, sim_sort
+        return env_set, sim_all
     else:
         return env_set
 
