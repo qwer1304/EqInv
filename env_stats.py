@@ -178,6 +178,7 @@ def main(args):
             ])
 
         perc = env_col / env_col.sum(axis=0, keepdims=True) * 100 # (env, col)
+        print(env_col, perc)
         
         labels = ['R', 'G']
         x = np.arange(len(labels))
