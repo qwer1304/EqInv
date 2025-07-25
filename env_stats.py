@@ -86,8 +86,9 @@ def main(args):
         'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
     # number of "other" samples with colors 0/1 in all envs and their sum
-    count_c0_o = [memory_images.imgs[int(j)][label] // 2 for j in env_ref_set[anchor]].count(0)
-    count_c1_o = [memory_images.imgs[int(j)][label] // 2 for j in env_ref_set[anchor]].count(1)
+    idx = [i for idxs in env_ref_set[anchor] for i in idxs]
+    count_c0_o = [memory_images.imgs[i][label] // 2 for i in idx].count(0)
+    count_c1_o = [memory_images.imgs[i][label] // 2 for i in idx].count(1)
 
     # number of anchor samples
     indx_a = [j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]
@@ -118,8 +119,9 @@ def main(args):
         'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
     # number of "other" samples with colors 0/1 in all envs and their sum
-    count_c0_o = [memory_images.imgs[int(j)][label] // 2 for j in env_ref_set[anchor]].count(0)
-    count_c1_o = [memory_images.imgs[int(j)][label] // 2 for j in env_ref_set[anchor]].count(1)
+    idx = [i for idxs in env_ref_set[anchor] for i in idxs]
+    count_c0_o = [memory_images.imgs[i][label] // 2 for i in idx].count(0)
+    count_c1_o = [memory_images.imgs[i][label] // 2 for i in idx].count(1)
 
     # number of anchor samples
     indx_a = [j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]
