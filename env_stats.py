@@ -140,8 +140,8 @@ def main(args):
         'total anchor by label:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]))
     
     # total number of samples of different colors for anchor
-    count_c0_a0 = count_c0_a + count_c0_o
-    count_c1_a0 = count_c1_a + count_c1_o
+    count_c0_a1 = count_c0_a + count_c0_o
+    count_c1_a1 = count_c1_a + count_c1_o
     print(8, 'R:', count_c0_a0, 'G:', count_c1_a0, 'Sum - # samples:', count_c0_a0 + count_c1_a0 - len(memory_images))
     
     # total number of samples
