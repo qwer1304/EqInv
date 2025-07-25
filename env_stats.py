@@ -249,12 +249,11 @@ def main(args):
         print("non-anchor: env vs color")
         print(env_col)
         print("anchor: env vs color")
-        col_a = np.vstack([col_a, col_a])
+        col_a = np.tile(col_a, (K, 1))  # repeat vertically, env x col
         print(col_a)
         
         print("env vs label:")
-        env_tar = np.array([[np.sum(col_a[0]), np.sum(env_col[0])],  
-                            [np.sum(col_a[1]), np.sum(env_col[1])]])
+        env_tar = np.array([[np.sum(col_a[j]), np.sum(env_col[j])] for j in range(len(col_a))])
         print(env_tar)
                             
         def col_label_corr(idxs):
