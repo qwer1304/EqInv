@@ -183,14 +183,16 @@ def main(args):
         offsets = np.linspace(0, K, num=K, endpoint=False)
         colors_hatches = ['red', 'lime']
         colors_env = ['lightsteelblue', 'orange', 'magenta', 'mediumpurple', 'olive']
+        xpos = np.zeros((K, len(labels)))
         
         perc = env_col / env_col.sum(axis=0, keepdims=True) * 100 # (env, col)
         
         for e in range(K):
+            xpos[e] = x*width*(K+1) + offsets[e]*width
             if hatches_linewidth_supported:
-                bar = ax[i].bar(x*width*(K+1) + offsets[e]*width, perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)], hatch_linewidth=3.0)
+                bar = ax[i].bar(xpos[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)], hatch_linewidth=3.0)
             else:
-                bar = ax[i].bar(x*width*(K+1) + offsets[e]*width, perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)])
+                bar = ax[i].bar(xpos[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)])
 
             for j, bc in enumerate(bar):
                 bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
@@ -199,7 +201,7 @@ def main(args):
         ax[i].set_ylabel('Percentage (%)')
         ax[i].set_xlabel('Color')
         ax[i].set_title(textwrap.fill(f'Split of colors R/G between all envs for NON-anchor samples for anchor {k}', width=ttl_width))
-        ax[i].set_xticks(x)
+        ax[i].set_xticks(np.mean(xpos, axis=0).tolist())
         ax[i].set_xticklabels(labels)
         ax[i].legend(loc='center')
         ax[i].grid(True)
@@ -216,9 +218,9 @@ def main(args):
         
         for e in range(K):
             if hatches_linewidth_supported:
-                bar = ax[i].bar(x*width*(K+1) + offsets[e]*width, perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)], hatch_linewidth=3.0)
+                bar = ax[i].bar(xpos[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)], hatch_linewidth=3.0)
             else:
-                bar = ax[i].bar(x*width*(K+1) + offsets[e]*width, perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)])
+                bar = ax[i].bar(xpos[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)])
 
             for j, bc in enumerate(bar):
                 bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
@@ -227,7 +229,7 @@ def main(args):
         ax[i].set_ylabel('Percentage (%)')
         ax[i].set_xlabel('Color')
         ax[i].set_title(textwrap.fill(f'Split of colors R/G between all envs for NON-anchor samples for anchor {k}', width=ttl_width))
-        ax[i].set_xticks(x)
+        ax[i].set_xticks(np.mean(xpos, axis=0).tolist())
         ax[i].set_xticklabels(labels)
         ax[i].legend(loc='center')
         ax[i].grid(True)
