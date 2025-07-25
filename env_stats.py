@@ -178,7 +178,8 @@ def main(args):
             ])
 
         perc = env_col / env_col.sum(axis=0, keepdims=True) * 100 # (env, col)
-        print(env_col, perc)
+        print(env_col)
+        print(perc)
         
         labels = ['R', 'G']
         x = np.arange(len(labels))
@@ -212,15 +213,6 @@ def main(args):
             sum([memory_images.imgs[j][label] // 2 == G for j in env_a])
             ])
             
-        # number of samples for color c in environment e
-        env_col = np.zeros((K, 2), dtype=int) # (env, col) - environment x color array
-
-        for e in range(env_col.shape[0]):
-            env_col[e] = np.array([
-                sum([memory_images.imgs[j][label] // 2 == R for j in env_n[e]]),
-                sum([memory_images.imgs[j][label] // 2 == G for j in env_n[e]])
-            ])
-
         perc = (env_col + col_a) / (env_col + col_a).sum(axis=0, keepdims=True) * 100 # (env, col)        
         
         labels = ['R', 'G']
