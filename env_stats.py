@@ -160,6 +160,7 @@ def main(args):
             ax = [ax]
         env_n = [env.tolist() for env in indeces] # lists of "other" samples split between environments
         env_lens = np.array([len(env) for env in env_n])  
+        print('k',k,env_lens)
         assert np.all(abs(np.diff(env_lens)) <= 1), f"anchor {k}: number of samples in the environments don't match"
         # Flatten the tuple of lists into one set
         env_n_flat = set().union(*env_n)
