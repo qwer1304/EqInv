@@ -189,7 +189,7 @@ def main(args):
             if hatches_linewidth_supported:
                 bar = ax[i].bar(x + widths[e], perc[0], width, label=f'env_{e}', hatch="x", color=colors_env[e], hatch_linewidth=3.0)
             else:
-                bar = ax[i].bar(x + width[e], perc[0], width, label=f'env_{e}', hatch="x", color=colors_env[e])
+                bar = ax[i].bar(x + widths[e], perc[0], width, label=f'env_{e}', hatch="x", color=colors_env[e])
 
             for j, bc in enumerate(bar):
                 bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
@@ -226,7 +226,7 @@ def main(args):
             if hatches_linewidth_supported:
                 bar = ax[i].bar(x + widths[e], perc[0], width, label=f'env_{e}', hatch="x", color=colors_env[e], hatch_linewidth=3.0)
             else:
-                bar = ax[i].bar(x + width[e], perc[0], width, label=f'env_{e}', hatch="x", color=colors_env[e])
+                bar = ax[i].bar(x + widths[e], perc[0], width, label=f'env_{e}', hatch="x", color=colors_env[e])
 
             for j, bc in enumerate(bar):
                 bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
