@@ -172,7 +172,6 @@ def main(args):
         # number of samples for color c in environment e
         env_col = np.zeros((K, 2), dtype=int) # (env, col) - environment x color array
 
-        print(type(env_n[0]))
         for e in range(env_col.shape[0]):
             env_col[e] = np.array([
                 sum([memory_images.imgs[j][label] // 2 == R for j in env_n[e]]),
@@ -217,7 +216,7 @@ def main(args):
         perc = (env_col + col_a) / (env_col + col_a).sum(axis=0, keepdims=True) * 100 # (env, col)        
         
         labels = ['R', 'G']
-        label = np.arange(len(labels))
+        xlabel = np.arange(len(labels))
         width = 0.35
         offset = np.arange(K)
         colors_hatches = ['red', 'lime']
@@ -226,9 +225,9 @@ def main(args):
         for e in range(K):
             # plot percentages for all labels for env 'e'
             if hatches_linewidth_supported:
-                bar = ax[i].bar(offset[e]*width + label - width/2, perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)], hatch_linewidth=3.0)
+                bar = ax[i].bar(offset[e]*width + xlabel - width/2, perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)], hatch_linewidth=3.0)
             else:
-                bar = ax[i].bar(offset[e]*width + label - width/2, perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)])
+                bar = ax[i].bar(offset[e]*width + xlabel - width/2, perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e % len(colors_env)])
 
             for j, bc in enumerate(bar):
                 bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
