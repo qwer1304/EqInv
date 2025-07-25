@@ -178,8 +178,6 @@ def main(args):
             ])
 
         perc = env_col / env_col.sum(axis=0, keepdims=True) * 100 # (env, col)
-        print(env_col)
-        print(perc)
         
         labels = ['R', 'G']
         x = np.arange(len(labels))
@@ -189,9 +187,9 @@ def main(args):
         colors_env = ['lightsteelblue', 'orange']
         for e in range(K):
             if hatches_linewidth_supported:
-                bar = ax[i].bar(x + widths[e], perc[0], width, label=f'env_{e}', hatch="x", color=colors_env[e], hatch_linewidth=3.0)
+                bar = ax[i].bar(x + widths[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e], hatch_linewidth=3.0)
             else:
-                bar = ax[i].bar(x + widths[e], perc[0], width, label=f'env_{e}', hatch="x", color=colors_env[e])
+                bar = ax[i].bar(x + widths[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e])
 
             for j, bc in enumerate(bar):
                 bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
@@ -223,9 +221,9 @@ def main(args):
         colors_env = ['lightsteelblue', 'orange']
         for e in range(K):
             if hatches_linewidth_supported:
-                bar = ax[i].bar(x + widths[e], perc[0], width, label=f'env_{e}', hatch="x", color=colors_env[e], hatch_linewidth=3.0)
+                bar = ax[i].bar(x + widths[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e], hatch_linewidth=3.0)
             else:
-                bar = ax[i].bar(x + widths[e], perc[0], width, label=f'env_{e}', hatch="x", color=colors_env[e])
+                bar = ax[i].bar(x + widths[e], perc[e], width, label=f'env_{e}', hatch="x", color=colors_env[e])
 
             for j, bc in enumerate(bar):
                 bc._hatch_color = mpl.colors.to_rgba(colors_hatches[j])
