@@ -153,11 +153,11 @@ def main(args):
 
     ni = 2 # number of side-by-side plotss
     ttl_width = args.title_width
-    for k, indeces in env_ref_set.items(): # over anchors, indeces is a tuple
+    for k, indeces in env_ref_set.items(): # over anchors, indeces is a tuple of idx tensors
         fig, ax = plt.subplots(1, ni, figsize=(ni*5, 4))
         if ni == 1:
             ax = [ax]
-        env_n = indeces # "other" samples split between environments
+        env_n = [env.tolist() for env in indeces] # lists of "other" samples split between environments
         env_lens = np.array([len(env) for env in env_n])  
         assert np.all(abs(np.diff(env_lens)) <= 1), f"anchor {k}: number of samples in the environments don't match"
         # Flatten the tuple of lists into one set
