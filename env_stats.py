@@ -82,7 +82,7 @@ def main(args):
     print(f'-----------ANCHOR {anchor}------------')
     # sum of numbers of samples in all envs vs number of "other" samples
     num_samples = sum(len(e) for e in env_ref_set[anchor])
-    print(1, f'anchor {anchor}:', 'all envs:', num_samples), \
+    print(1, f'anchor {anchor}:', 'all envs:', num_samples, \
         'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
     # number of "other" samples with colors 0/1 in all envs and their sum
@@ -114,7 +114,7 @@ def main(args):
     print(f'-----------ANCHOR {anchor}------------')
     # sum of numbers of samples in all envs vs number of "other" samples
     num_samples = sum(len(e) for e in env_ref_set[anchor])
-    print(5, f'anchor {anchor}:', 'all envs:', num_samples), \
+    print(5, f'anchor {anchor}:', 'all envs:', num_samples, \
         'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
 
     # number of "other" samples with colors 0/1 in all envs and their sum
