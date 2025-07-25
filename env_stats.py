@@ -205,6 +205,12 @@ def main(args):
         
         i += 1
 
+        # number of anchor samples for color c 
+        col_a = np.array([
+            sum([memory_images.imgs[j][label] // 2 == R for j in env_a]),
+            sum([memory_images.imgs[j][label] // 2 == G for j in env_a])
+            ])
+            
         # number of samples for color c in environment e
         env_col = np.zeros((K, 2), dtype=int) # (env, col) - environment x color array
 
@@ -214,7 +220,7 @@ def main(args):
                 sum([memory_images.imgs[j][label] // 2 == G for j in env_n[e]])
             ])
 
-        perc = env_col / env_col.sum(axis=0, keepdims=True) * 100 # (env, col)
+        perc = (env_col + col_a) / (env_col + col_a).sum(axis=0, keepdims=True) * 100 # (env, col)        
         
         labels = ['R', 'G']
         x = np.arange(len(labels))
