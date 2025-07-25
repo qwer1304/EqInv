@@ -279,8 +279,6 @@ def main(args):
         
         print("Color/Label correlations pos+neg:", f'anchor: {k}', [f"env {e}: {corre_na[e]}" for e in range(K)])
         """
-    exit()
-
     train_images = utils.Imagenet_idx(root=data+'/train', transform=None, target_transform=None)
     val_images = utils.Imagenet_idx(root=data+'/val', transform=None, target_transform=None)
     test_images = utils.Imagenet_idx(root=data+'/testgt', transform=None, target_transform=None)
