@@ -270,7 +270,7 @@ def main(args):
                 return np.corrcoef(x, y)[0, 1]
 
         corre_na = []
-        r=numpy.random.default_rng()
+        r=np.random.default_rng()
         fraction = 0.1
 
         for e in range(K):
