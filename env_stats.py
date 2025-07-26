@@ -282,7 +282,8 @@ def main(args):
         # Setting up the 1st level table
         table1 = BeautifulTable()
         table1.columns.header = ['non-anchor', 'anchor', 'label']
-        table1.rows.append(table2)
+        for j in range(len(table2.rows)):
+            table1.rows.append(table2.rows[j])
         table1.columns.padding_left[0] = 0
         table1.columns.padding_right[0] = 0
         print(table1)
