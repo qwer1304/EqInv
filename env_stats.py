@@ -320,7 +320,7 @@ def main(args):
         table2a.columns.padding_left = 0
         table2a.columns.padding_right = 0
         for j in range(len(corre_na)):
-            table2a.rows.append(corre_na[j].tolist())
+            table2a.rows.append([corre_na[j]])
         # MUST come AFTER rows creation!!!!!!!!!
         table2a.rows.header = [f"Env {j}" for j in range(tab.shape[0])]
         
