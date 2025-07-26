@@ -252,6 +252,20 @@ def main(args):
         env_tar = np.array([[np.sum(col_a[j]), np.sum(env_col[j])] for j in range(len(col_a))])
         
         tab = np.hstack((env_col, col_a, env_tar))
+
+        import warnings
+
+        warnings.filterwarnings(
+            "ignore",
+            message="'BeautifulTable.__iter__' has been deprecated",
+            category=FutureWarning
+        )
+
+        warnings.filterwarnings(
+            "ignore",
+            message="'BeautifulTable.__len__' has been deprecated",
+            category=FutureWarning
+        )
        
         # Setting up the 2nd level table
         table2 = BeautifulTable()
@@ -266,14 +280,12 @@ def main(args):
         print(table2)
 
         # Setting up the 1st level table
-        """
         table1 = BeautifulTable()
         table1.columns.header = ['non-anchor', 'anchor', 'label']
         table1.rows.append(table2)
         table1.columns.padding_left[0] = 0
         table1.columns.padding_right[0] = 0
         print(table1)
-        """
 
         # Setting up the 0th level table
         table0 = BeautifulTable()
