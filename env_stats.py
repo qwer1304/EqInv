@@ -379,7 +379,7 @@ def main(args):
     table1.border.bottom = ''
     table1.columns.padding_left = 0
     table1.columns.padding_right = 0
-    table1.rows.append([corr_train[0,1], corr_val[0,1], corr_test[0,1])
+    table1.rows.append([corr_train[0,1], corr_val[0,1], corr_test[0,1]])
 
     # Setting up the 0th level table
     table0 = BeautifulTable()
