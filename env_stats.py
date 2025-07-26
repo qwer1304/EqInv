@@ -267,6 +267,7 @@ def main(args):
         table2.border.top = ''
         table2.border.right = ''
         table2.rows.header = [f"Env {j}" for j in range(tab.shape[0])]
+        print(table2)
 
         # Setting up the 1st level table
         table1 = BeautifulTable()
@@ -274,6 +275,7 @@ def main(args):
         table1.rows.append(table2)
         table1.columns.padding_left[0] = 0
         table1.columns.padding_right[0] = 0
+        print(table1)
 
         # Setting up the 0th level table
         table0 = BeautifulTable()
@@ -286,7 +288,7 @@ def main(args):
         #for i in range(num_cols):
         #    table.columns.alignment[i] = BeautifulTable.ALIGN_CENTER    
 
-        print(table0)  
+        #print(table0)  
         """
         print(f"Anchor {k}:")
         print("non-anchor: env vs color")
