@@ -593,7 +593,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                 env_ref_set_class = env_ref_set[class_idx]
                 # all_sample_num is the number of samples in the dataset before doubling
                 if args.clusters_to_use is not None:
-                    env_ref_set_class = env_ref_set_class[*args.clusters_to_use]
+                    env_ref_set_class = [env_ref_set_class[j] for j in args.clusters_to_use]
                 all_samples_env_table = torch.zeros(all_sample_num, len(env_ref_set_class))
                 for env_idx in range(len(env_ref_set_class)):
                     all_samples_env_table[env_ref_set_class[env_idx], env_idx] = 1  # set "other" samples of current env to 1
