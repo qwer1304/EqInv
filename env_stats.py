@@ -312,7 +312,7 @@ def main(args):
             table2[jj].rows.header = [f"Env {j}" for j in range(tab.shape[0])]
 
         table2a = BeautifulTable()
-        table2a.columns.header = [" "]
+        table2a.columns.header = ["corr"]
         table2a.border.left = ''
         table2a.border.right = ''
         table2a.border.top = ''
@@ -326,7 +326,7 @@ def main(args):
         
         # Setting up the 1st level table
         table1 = BeautifulTable(maxwidth=80)
-        table1.columns.header = ['non-anchor', 'anchor', 'label', 'color/label corr']
+        table1.columns.header = ['non-anchor', 'anchor', 'label', 'color/label']
         table1.rows.append([*table2, table2a])
         table1.border.left = ''
         table1.border.right = ''
