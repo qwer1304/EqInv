@@ -252,14 +252,10 @@ def main(args):
         env_tar = np.array([[np.sum(col_a[j]), np.sum(env_col[j])] for j in range(len(col_a))])
         
         tab = np.hstack((env_col, col_a, env_tar))
-
-        # Metric groups and subheaders
-        metrics = ["non-anchor", "anchor", "label"]
-        subheaders = ["R", "G"]
-        num_cols = tab.shape[1]
-        
+       
         # Setting up the 2nd level table
         table2 = BeautifulTable()
+        table2.columns.header = ["R","G"] * (tab.shape[1] // 2)
         for j in range(tab.shape[0]):
             table2.rows.append(tab[j].tolist())
         table2.border.left = ''
