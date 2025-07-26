@@ -454,6 +454,9 @@ def main():
     else:
         env_ref_set = torch.load(fp)
         print(f'Cluster {fp} loaded.')
+        assert len(env_ref_set[0]) == args.num_clusters, "Num clusters in cluster file {} != num_clusters {}".format(len(env_ref_set[0]), args.num_clusters)
+        assert args.clusters_to_use is None or \
+            max(args.clusters_to_use) <= args.num_clusters-1, "Largest cluster to use {} must be < {}".format(max(args.clusters_to_use), args.num_clusters)
 
     for epoch in range(args.start_epoch, args.epochs):
 

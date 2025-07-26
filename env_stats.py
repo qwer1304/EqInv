@@ -9,6 +9,7 @@ import textwrap
 
 import os
 import argparse
+from beautifultable import BeautifulTable
 
 
 def is_notebook():
@@ -247,6 +248,45 @@ def main(args):
         else:
             plt.show(block = (k == len(env_ref_set)-1 and i == 1))
             
+        col_a = np.tile(col_a, (K, 1))  # repeat vertically, env x col
+        env_tar = np.array([[np.sum(col_a[j]), np.sum(env_col[j])] for j in range(len(col_a))])
+        
+        tab = np.hstack((env_col, col_a, env_tar))
+
+        # Metric groups and subheaders
+        metrics = ["non-anchor", "anchor", "label"]
+        subheaders = ["R", "G"]
+        num_cols = tab.shape[1]
+        
+        # Setting up the 2nd level table
+        table2 = BeautifulTable()
+        table2.rows.append(tab.tolist())
+        table2.border.left = ''
+        table2.border.right = ''
+        table2.border.top = ''
+        table2.border.right = ''
+        table2.rows.header = [f"Env {j}" for j in range(tab.shape[0])]
+
+        # Setting up the 1st level table
+        table1 = BeautifulTable()
+        table1.columns.header = ['non-anchor', 'anchor', 'label']
+        table1.rows.append(table2)
+        table1.columns.padding_left[0] = 0
+        table1.columns.padding_right[0] = 0
+
+        # Setting up the 0th level table
+        table0 = BeautifulTable()
+        table0.columns.header = [f"Anchor {k}"]
+        table0.rows.append(table1)
+        table0.columns.padding_left[0] = 0
+        table0.columns.padding_right[0] = 0
+
+        # Optional: align all columns center
+        #for i in range(num_cols):
+        #    table.columns.alignment[i] = BeautifulTable.ALIGN_CENTER    
+
+        print(table0)  
+        """
         print(f"Anchor {k}:")
         print("non-anchor: env vs color")
         print(env_col)
@@ -257,6 +297,7 @@ def main(args):
         print("env vs label:")
         env_tar = np.array([[np.sum(col_a[j]), np.sum(env_col[j])] for j in range(len(col_a))])
         print(env_tar)
+        """
                             
         def col_label_corr(idxs):
             col = [memory_images.imgs[j][label] // 2 for j in idxs]
