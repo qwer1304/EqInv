@@ -255,6 +255,28 @@ def main(args):
         
         tab = np.hstack((env_col, col_a, env_tar))
 
+        def col_label_corr(idxs):
+            col = [memory_images.imgs[j][label] // 2 for j in idxs]
+            tar = [memory_images.imgs[j][label] % 2 for j in idxs]
+            x = np.asarray(col)
+            y = np.asarray(tar)
+            std_x = np.std(x)
+            std_y = np.std(y)
+    
+            if std_x == 0 or std_y == 0:
+                return 0.0  # or np.nan, depending on what you want
+            else:
+                return np.corrcoef(x, y)[0, 1]
+
+        corre_na = []
+        r=np.random.default_rng()
+        fraction = 0.1
+
+        for e in range(K):
+            idxs_a = r.choice(len(env_a), int(fraction*len(env_a)), replace=False) 
+            idxs = env_n[e] + [env_a[j] for j in idxs_a]
+            corre_na.append(col_label_corr(idxs))
+
         import warnings
 
         warnings.filterwarnings(
@@ -289,10 +311,23 @@ def main(args):
             # MUST come AFTER rows creation!!!!!!!!!
             table2[jj].rows.header = [f"Env {j}" for j in range(tab.shape[0])]
 
+        table2a = BeautifulTable()
+        table2a.columns.header = [f"Color/Label correlations\n{fraction}*pos+neg"]
+        table2a.border.left = ''
+        table2a.border.right = ''
+        table2a.border.top = ''
+        table2a.border.bottom = ''
+        table2a.columns.padding_left = 0
+        table2a.columns.padding_right = 0
+        for j in range(len(corre_na)):
+            table2a.rows.append(corre_na[j].float())
+        # MUST come AFTER rows creation!!!!!!!!!
+        table2a.rows.header = [f"Env {j}" for j in range(tab.shape[0])]
+        
         # Setting up the 1st level table
         table1 = BeautifulTable()
-        table1.columns.header = ['non-anchor', 'anchor', 'label']
-        table1.rows.append(table2)
+        table1.columns.header = ['non-anchor', 'anchor', 'label', 'color/label corr']
+        table1.rows.append([*table2, table2a])
         table1.border.left = ''
         table1.border.right = ''
         table1.border.top = ''
@@ -309,42 +344,11 @@ def main(args):
 
         print(table0)
 
-        """
-        print(f"Anchor {k}:")
-        print("non-anchor: env vs color")
-        print(env_col)
-        print("anchor: env vs color")
-        col_a = np.tile(col_a, (K, 1))  # repeat vertically, env x col
-        print(col_a)
-        
-        print("env vs label:")
-        env_tar = np.array([[np.sum(col_a[j]), np.sum(env_col[j])] for j in range(len(col_a))])
-        print(env_tar)
-        """
-                            
-        def col_label_corr(idxs):
-            col = [memory_images.imgs[j][label] // 2 for j in idxs]
-            tar = [memory_images.imgs[j][label] % 2 for j in idxs]
-            x = np.asarray(col)
-            y = np.asarray(tar)
-            std_x = np.std(x)
-            std_y = np.std(y)
-    
-            if std_x == 0 or std_y == 0:
-                return 0.0  # or np.nan, depending on what you want
-            else:
-                return np.corrcoef(x, y)[0, 1]
-
-        corre_na = []
-        r=np.random.default_rng()
-        fraction = 0.1
-
-        for e in range(K):
-            idxs_a = r.choice(len(env_a), int(fraction*len(env_a)), replace=False) 
-            idxs = env_n[e] + [env_a[j] for j in idxs_a]
-            corre_na.append(col_label_corr(idxs))
-        
-        print(f"Color/Label correlations {fraction}*pos+neg:", f'anchor: {k}', [f"env {e}: {corre_na[e]}" for e in range(K)])
+        # Optional: align all columns center
+        #for i in range(num_cols):
+        #    table.columns.alignment[i] = BeautifulTable.ALIGN_CENTER    
+                                    
+        #print(f"Color/Label correlations {fraction}*pos+neg:", f'anchor: {k}', [f"env {e}: {corre_na[e]:.3f}" for e in range(K)])
 
     train_images = utils.Imagenet_idx(root=data+'/train', transform=None, target_transform=None)
     val_images = utils.Imagenet_idx(root=data+'/val', transform=None, target_transform=None)

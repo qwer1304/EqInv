@@ -91,7 +91,7 @@ parser.add_argument('--pretrain_model', action="store_true", default=False, help
 parser.add_argument('--pretrain_path', type=str, default=None, help='the path of pretrain model')
 
 # invariance
-parser.add_argument('--inv', type=str, default='irm', help='type of invariant loss')
+parser.add_argument('--inv', type=str, default='rex', choices=['rex', 'rvp'], help='type of invariant loss')
 parser.add_argument('--inv_start', type=int, default=0, help='start epoch of inv loss')
 parser.add_argument('--inv_weight', default=1., type=float, help='the weight of invariance')
 parser.add_argument('--mlp', action="store_true", default=False, help='use mlp before the loss and feature?')
@@ -654,15 +654,19 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                     env_nll.append(criterion_inv(output_env, target_num_env)) 
                     temp_pen.append(env_nll[-1]) # loss of this environment appended to list
 
-                env_pen.append(torch.var(torch.stack(temp_pen))) # varaince of losses of the environments appended to list of losses of all classes
+                if args.inv == 'rex':
+                    env_pen.append(torch.var(torch.stack(temp_pen))) # varaince of losses of the environments appended to list of losses of all classes
+                elif args.inv == 'rvp':
+                    env_pen.append(torch.std(torch.stack(temp_pen))) # std of losses of the environments appended to list of losses of all classes
+                else:
+                    raise ValueError(f'invalid inv method {args.inv}')
                 temp_pen = []
 
 
             # Invariance Term: mean of variances of contrastive losses of class-environments
             inv_weight = args.inv_weight if epoch >= args.inv_start else 0.
-            assert args.inv == 'rex'
-            rex_penalty = sum(env_pen) / len(env_pen)
-            loss_inv = inv_weight * rex_penalty
+            penalty = sum(env_pen) / len(env_pen) # average loss over classes
+            loss_inv = inv_weight * penalty
 
         else:
             loss_inv = torch.Tensor([0.]).cuda()
