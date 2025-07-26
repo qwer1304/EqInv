@@ -348,12 +348,6 @@ def main(args):
 
         print(table0)
 
-        # Optional: align all columns center
-        #for i in range(num_cols):
-        #    table.columns.alignment[i] = BeautifulTable.ALIGN_CENTER    
-                                    
-        #print(f"Color/Label correlations {fraction}*pos+neg:", f'anchor: {k}', [f"env {e}: {corre_na[e]:.3f}" for e in range(K)])
-
     train_images = utils.Imagenet_idx(root=data+'/train', transform=None, target_transform=None)
     val_images = utils.Imagenet_idx(root=data+'/val', transform=None, target_transform=None)
     test_images = utils.Imagenet_idx(root=data+'/testgt', transform=None, target_transform=None)
@@ -370,7 +364,7 @@ def main(args):
     corr_test = np.corrcoef(np.array(col_test), np.array(tar_test))
 
     # Setting up the 1st level table
-    table1 = BeautifulTable()
+    table1 = BeautifulTable(maxwidth=50)
     table1.columns.header = ["train", "val", "test"]
     table1.set_style(BeautifulTable.STYLE_BOX)
     table1.border.left = ''
@@ -380,18 +374,22 @@ def main(args):
     table1.columns.padding_left = 0
     table1.columns.padding_right = 0
     table1.rows.append([corr_train[0,1], corr_val[0,1], corr_test[0,1]])
+    table1_str = str(table1)
+    max_line_len = max(len(line) for line in table1_str.splitlines())
+
+    # Header padded to exactly max width
+    header_title = "Color/Label correlations"
+    wrapped_header = "\n".join(textwrap.wrap(header_title, width=max_line_len))
 
     # Setting up the 0th level table
     table0 = BeautifulTable()
-    table0.columns.header = ["Color/Label correlations"]
+    table0.columns.header = [wrapped_header]
     table0.set_style(BeautifulTable.STYLE_BOX)
-    table0.rows.append([str(table1)])
+    table0.rows.append([table1_str])
     table0.columns.padding_left = 0
     table0.columns.padding_right = 0
 
     print(table0)
-
-    #print("Color/Label correlations:", "train:", corr_train[0,1], "val:", corr_val[0,1], "test:", corr_test[0,1])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create CMNIST dataset')
