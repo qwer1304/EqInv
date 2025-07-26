@@ -295,6 +295,7 @@ def main(args):
         table2 = [BeautifulTable() for _ in range(tab.shape[1] // num_colors)] # 2 columns per group - R, G
         for j in range(len(table2)):
             table2[j].columns.header = ["R","G"]
+            table2[j].set_style(BeautifulTable.STYLE_BOX)
             table2[j].border.left = ''
             table2[j].border.right = ''
             table2[j].border.top = ''
@@ -313,6 +314,7 @@ def main(args):
 
         table2a = BeautifulTable()
         table2a.columns.header = ["corr"]
+        table2a.set_style(BeautifulTable.STYLE_BOX)
         table2a.border.left = ''
         table2a.border.right = ''
         table2a.border.top = ''
@@ -328,6 +330,7 @@ def main(args):
         table1 = BeautifulTable(maxwidth=80)
         table1.columns.header = ['non-anchor', 'anchor', 'label', 'color/label']
         table1.rows.append([*table2, table2a])
+        table1.set_style(BeautifulTable.STYLE_BOX)
         table1.border.left = ''
         table1.border.right = ''
         table1.border.top = ''
@@ -337,6 +340,7 @@ def main(args):
 
         # Setting up the 0th level table
         table0 = BeautifulTable()
+        table0.set_style(BeautifulTable.STYLE_BOX)
         table0.columns.header = [f"Anchor {k}"]
         table0.rows.append([str(table1)])
         table0.columns.padding_left = 0
@@ -364,7 +368,30 @@ def main(args):
     corr_train = np.corrcoef(np.array(col_train), np.array(tar_train))
     corr_val = np.corrcoef(np.array(col_val), np.array(tar_val))
     corr_test = np.corrcoef(np.array(col_test), np.array(tar_test))
-    print("Color/Label correlations:", "train:", corr_train[0,1], "val:", corr_val[0,1], "test:", corr_test[0,1])
+
+    # Setting up the 1st level table
+    table1 = BeautifulTable()
+    table1.columns.header = ["train", "val", "test"]
+    table1.set_style(BeautifulTable.STYLE_BOX)
+    table1.border.left = ''
+    table1.border.right = ''
+    table1.border.top = ''
+    table1.border.bottom = ''
+    table1.columns.padding_left = 0
+    table1.columns.padding_right = 0
+    table1.rows.append([corr_train[0,1], corr_val[0,1], corr_test[0,1])
+
+    # Setting up the 0th level table
+    table0 = BeautifulTable()
+    table0.columns.header = ["Color/Label correlations"]
+    table0.set_style(BeautifulTable.STYLE_BOX)
+    table0.rows.append([str(table1)])
+    table0.columns.padding_left = 0
+    table0.columns.padding_right = 0
+
+    print(table0)
+
+    #print("Color/Label correlations:", "train:", corr_train[0,1], "val:", corr_val[0,1], "test:", corr_test[0,1])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create CMNIST dataset')
