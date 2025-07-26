@@ -62,6 +62,8 @@ def main(args):
 
     fp = args.fp
     env_ref_set = torch.load(fp)
+    num_labels = 2
+    num_colors = num_labels
     K = len(env_ref_set[0])
     data = args.data
     memory_images = utils.Imagenet_idx(root=data + '/train', transform=None, target_transform=None)
@@ -84,28 +86,28 @@ def main(args):
     # sum of numbers of samples in all envs vs number of "other" samples
     num_samples = sum(len(e) for e in env_ref_set[anchor])
     print(1, f'anchor {anchor}:', 'all envs:', num_samples, \
-        'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
+        'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % num_labels != anchor]))
 
     # number of "other" samples with colors 0/1 in all envs and their sum
     idx = [i for idxs in env_ref_set[anchor] for i in idxs]
-    count_c0_o = [memory_images.imgs[i][label] // 2 for i in idx].count(0)
-    count_c1_o = [memory_images.imgs[i][label] // 2 for i in idx].count(1)
+    count_c0_o = [memory_images.imgs[i][label] // num_labels for i in idx].count(0)
+    count_c1_o = [memory_images.imgs[i][label] // num_labels for i in idx].count(1)
 
     # number of anchor samples
     indx_a = [j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]
     # number of anchor samples with colors 0/1 and their sum
-    count_c0_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(0)
-    count_c1_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(1)
+    count_c0_a = [memory_images.imgs[j][label] // num_labels for j in indx_a].count(0)
+    count_c1_a = [memory_images.imgs[j][label] // num_labels for j in indx_a].count(1)
 
     # number of "other" samples with colors 0/1 in all envs and their sum
     print(2, f'anchor {anchor}:','R:', count_c0_o, 'G:', count_c1_o, \
         'total other by color:', count_c0_o + count_c1_o, \
-        'total other by label:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
+        'total other by label:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % num_labels != anchor]))
     
     # number of anchor samples with colors 0/1 and their sum
     print(3, f'anchor {anchor}:', count_c0_a, count_c1_a, \
         'total anchor by color:', count_c0_a + count_c1_a, \
-        'total anchor by label:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]))
+        'total anchor by label:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % num_labels == anchor]))
     
     # total number of samples of different colors for anchor
     count_c0_a0 = count_c0_a + count_c0_o
@@ -117,28 +119,28 @@ def main(args):
     # sum of numbers of samples in all envs vs number of "other" samples
     num_samples = sum(len(e) for e in env_ref_set[anchor])
     print(5, f'anchor {anchor}:', 'all envs:', num_samples, \
-        'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
+        'other:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % num_labels != anchor]))
 
     # number of "other" samples with colors 0/1 in all envs and their sum
     idx = [i for idxs in env_ref_set[anchor] for i in idxs]
-    count_c0_o = [memory_images.imgs[i][label] // 2 for i in idx].count(0)
-    count_c1_o = [memory_images.imgs[i][label] // 2 for i in idx].count(1)
+    count_c0_o = [memory_images.imgs[i][label] // num_labels for i in idx].count(0)
+    count_c1_o = [memory_images.imgs[i][label] // num_labels for i in idx].count(1)
 
     # number of anchor samples
-    indx_a = [j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]
+    indx_a = [j for j in range(len(memory_images)) if memory_images.imgs[j][label] % num_labels == anchor]
     # number of anchor samples with colors 0/1 and their sum
-    count_c0_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(0)
-    count_c1_a = [memory_images.imgs[j][label] // 2 for j in indx_a].count(1)
+    count_c0_a = [memory_images.imgs[j][label] // num_labels for j in indx_a].count(0)
+    count_c1_a = [memory_images.imgs[j][label] // num_labels for j in indx_a].count(1)
 
-    # number of "other" samples with colors 0/1 in all envs and their sum
+    # number of "other" samples with colors R/G in all envs and their sum
     print(6, f'anchor {anchor}:','R:', count_c0_o, 'G:', count_c1_o, \
         'total other by color:', count_c0_o + count_c1_o, \
-        'total other by label:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 != anchor]))
+        'total other by label:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % num_labels != anchor]))
     
-    # number of anchor samples with colors 0/1 and their sum
+    # number of anchor samples with colors R/G and their sum
     print(7, f'anchor {anchor}:', count_c0_a, count_c1_a, \
         'total anchor by color:', count_c0_a + count_c1_a, \
-        'total anchor by label:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]))
+        'total anchor by label:', len([j for j in range(len(memory_images)) if memory_images.imgs[j][label] % num_labels == anchor]))
     
     # total number of samples of different colors for anchor
     count_c0_a1 = count_c0_a + count_c0_o
@@ -152,7 +154,7 @@ def main(args):
     R = 0
     G = 1
 
-    ni = 2 # number of side-by-side plotss
+    ni = 2 # number of side-by-side plots
     ttl_width = args.title_width
     for k, indeces in env_ref_set.items(): # over anchors, indeces is a tuple of idx tensors
         fig, ax = plt.subplots(1, ni, figsize=(ni*5, 4))
@@ -170,12 +172,12 @@ def main(args):
         i = 0
         
         # number of samples for color c in environment e
-        env_col = np.zeros((K, 2), dtype=int) # (env, col) - environment x color array
+        env_col = np.zeros((K, num_colors), dtype=int) # (env, col) - environment x color array
 
         for e in range(env_col.shape[0]):
             env_col[e] = np.array([
-                sum([memory_images.imgs[j][label] // 2 == R for j in env_n[e]]),
-                sum([memory_images.imgs[j][label] // 2 == G for j in env_n[e]])
+                sum([memory_images.imgs[j][label] // num_labels == R for j in env_n[e]]),
+                sum([memory_images.imgs[j][label] // num_labels == G for j in env_n[e]])
             ])
 
         labels = ['R', 'G']
@@ -211,8 +213,8 @@ def main(args):
 
         # number of anchor samples for color c 
         col_a = np.array([
-            sum([memory_images.imgs[j][label] // 2 == R for j in env_a]),
-            sum([memory_images.imgs[j][label] // 2 == G for j in env_a])
+            sum([memory_images.imgs[j][label] // num_labels == R for j in env_a]),
+            sum([memory_images.imgs[j][label] // num_labels == G for j in env_a])
             ])
             
         perc = (env_col + col_a) / (env_col + col_a).sum(axis=0, keepdims=True) * 100 # (env, col)        
@@ -268,39 +270,45 @@ def main(args):
         )
        
         # Setting up the 2nd level table
-        table2 = BeautifulTable()
-        table2.columns.header = ["R","G"] * (tab.shape[1] // 2)
-        for j in range(tab.shape[0]):
-            table2.rows.append(tab[j].tolist())
-        table2.border.left = ''
-        table2.border.right = ''
-        table2.border.top = ''
-        table2.border.right = ''
-        table2.rows.header = [f"Env {j}" for j in range(tab.shape[0])]
-        print(table2)
+        table2 = [BeautifulTable() for _ in range(tab.shape[1] // num_colors)] # 2 columns per group - R, G
+        for j in range(len(table2)):
+            table2[j].columns.header = ["R","G"]
+            table2[j].border.left = ''
+            table2[j].border.right = ''
+            table2[j].border.top = ''
+            table2[j].border.bottom = ''
+            table2[j].columns.padding_left = 0
+            table2[j].columns.padding_right = 0
+
+        for jj in range(len(table2)): # column groups
+            for j in range(tab.shape[0]): # rows
+                offset = jj*num_colors
+                cols = tab[j][offset:offset+num_colors].tolist()
+                table2[jj].rows.append(cols)
+
+            # MUST come AFTER rows creation!!!!!!!!!
+            table2[jj].rows.header = [f"Env {j}" for j in range(tab.shape[0])]
 
         # Setting up the 1st level table
         table1 = BeautifulTable()
         table1.columns.header = ['non-anchor', 'anchor', 'label']
-        for j in range(len(table2.rows)):
-            cols = [table2.rows[j][jj:jj+2] for jj in range(0, len(table2.rows[j]), 2)]
-            table1.rows.append(cols)
-        table1.columns.padding_left[0] = 0
-        table1.columns.padding_right[0] = 0
-        print(table1)
+        table1.rows.append(table2)
+        table1.border.left = ''
+        table1.border.right = ''
+        table1.border.top = ''
+        table1.border.bottom = ''
+        table1.columns.padding_left = 0
+        table1.columns.padding_right = 0
 
         # Setting up the 0th level table
         table0 = BeautifulTable()
         table0.columns.header = [f"Anchor {k}"]
-        table0.rows.append(table1)
-        table0.columns.padding_left[0] = 0
-        table0.columns.padding_right[0] = 0
+        table0.rows.append([str(table1)])
+        table0.columns.padding_left = 0
+        table0.columns.padding_right = 0
 
-        # Optional: align all columns center
-        #for i in range(num_cols):
-        #    table.columns.alignment[i] = BeautifulTable.ALIGN_CENTER    
+        print(table0)
 
-        #print(table0)  
         """
         print(f"Anchor {k}:")
         print("non-anchor: env vs color")
