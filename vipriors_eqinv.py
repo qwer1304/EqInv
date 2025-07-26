@@ -115,6 +115,7 @@ parser.add_argument('--only_cluster', action="store_true", help='only do cluster
 parser.add_argument('--cluster_temp', type=float, default=0.1, help='temperature for clusteing') 
 parser.add_argument('--cluster_save_dist', action="store_true", help='save cluster distances in ./misc/<name>/env_ref_dist')
 parser.add_argument('--num_clusters', type=int, default=2, help='number of custer K') 
+parser.add_argument('--clusters_to_use', type=int, nargs='+', default=None, help='clusters to use out of K clusters') 
 
 
 # shuffle validation and test datasets
@@ -591,6 +592,8 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                 """
                 env_ref_set_class = env_ref_set[class_idx]
                 # all_sample_num is the number of samples in the dataset before doubling
+                if args.clusters_to_use is not None:
+                    env_ref_set_class = env_ref_set_class[args.clusters_to_use]
                 all_samples_env_table = torch.zeros(all_sample_num, len(env_ref_set_class))
                 for env_idx in range(len(env_ref_set_class)):
                     all_samples_env_table[env_ref_set_class[env_idx], env_idx] = 1  # set "other" samples of current env to 1
