@@ -260,7 +260,8 @@ def main(args):
         
         # Setting up the 2nd level table
         table2 = BeautifulTable()
-        table2.rows.append(tab.tolist())
+        for j in range(tab.shape[0]):
+            table2.rows.append(tab[j].tolist())
         table2.border.left = ''
         table2.border.right = ''
         table2.border.top = ''
