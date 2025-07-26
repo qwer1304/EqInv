@@ -356,9 +356,9 @@ def main(args):
     num_vals = len(val_images)
     num_test = len(test_images)
 
-    col_train, tar_train = [train_images.imgs[j][label] // 2 for j in range(num_train)], [train_images.imgs[j][label] % 2 for j in range(num_train)]
-    col_val, tar_val = [val_images.imgs[j][label] // 2 for j in range(num_vals)], [val_images.imgs[j][label] % 2 for j in range(num_vals)]
-    col_test, tar_test = [test_images.imgs[j][label] // 2 for j in range(num_test)], [test_images.imgs[j][label] % 2 for j in range(num_test)]
+    col_train, tar_train = [train_images.imgs[j][label] // num_labels for j in range(num_train)], [train_images.imgs[j][label] % num_labels for j in range(num_train)]
+    col_val, tar_val = [val_images.imgs[j][label] // num_labels for j in range(num_vals)], [val_images.imgs[j][label] % num_labels for j in range(num_vals)]
+    col_test, tar_test = [test_images.imgs[j][label] // num_labels for j in range(num_test)], [test_images.imgs[j][label] % num_labels for j in range(num_test)]
     corr_train = np.corrcoef(np.array(col_train), np.array(tar_train))
     corr_val = np.corrcoef(np.array(col_val), np.array(tar_val))
     corr_test = np.corrcoef(np.array(col_test), np.array(tar_test))
