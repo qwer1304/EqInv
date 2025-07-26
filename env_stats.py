@@ -312,7 +312,7 @@ def main(args):
             table2[jj].rows.header = [f"Env {j}" for j in range(tab.shape[0])]
 
         table2a = BeautifulTable()
-        #table2a.columns.header = ["XXX"]
+        table2a.columns.header = [""]
         table2a.border.left = ''
         table2a.border.right = ''
         table2a.border.top = ''
