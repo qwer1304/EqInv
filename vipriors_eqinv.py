@@ -657,7 +657,8 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                 if args.inv == 'rex':
                     env_pen.append(torch.var(torch.stack(temp_pen))) # varaince of losses of the environments appended to list of losses of all classes
                 elif args.inv == 'rvp':
-                    env_pen.append(torch.std(torch.stack(temp_pen))) # std of losses of the environments appended to list of losses of all classes
+                    epsilon = 1e-8
+                    env_pen.append(torch.std(torch.stack(temp_pen)) + epsilon) # std of losses of the environments appended to list of losses of all classes
                 else:
                     raise ValueError(f'invalid inv method {args.inv}')
                 temp_pen = []
@@ -857,15 +858,20 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
                     env_nll.append(criterion(output_env, target_num_env)) # nll of this environment appended to list
                     temp_pen.append(cont_loss_env) # contrastive loss of this environment appended to list
 
-                env_pen.append(torch.var(torch.stack(temp_pen))) # varaince of contrastive losses of the environments appended to list of posses of all classes
+                if args.inv == 'rex':
+                    env_pen.append(torch.var(torch.stack(temp_pen))) # varaince of losses of the environments appended to list of losses of all classes
+                elif args.inv == 'rvp':
+                    epsilon = 1e-8
+                    env_pen.append(torch.std(torch.stack(temp_pen)) + epsilon) # std of losses of the environments appended to list of losses of all classes
+                else:
+                    raise ValueError(f'invalid inv method {args.inv}')
                 temp_pen = []
 
 
             # Invariance Term: mean of variances of contrastive losses of class-environments
             inv_weight = args.inv_weight if epoch >= args.inv_start else 0.
-            assert args.inv == 'rex'
-            rex_penalty = sum(env_pen) / len(env_pen)
-            loss_inv = inv_weight * rex_penalty
+            penalty = sum(env_pen) / len(env_pen) # average loss over classes
+            loss_inv = inv_weight * penalty
 
         else:
             loss_inv = torch.Tensor([0.]).cuda()
