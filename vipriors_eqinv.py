@@ -666,13 +666,16 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
 
 
             # Invariance Term: mean of variances of contrastive losses of class-environments
-            inv_weight = args.inv_weight if epoch >= args.inv_start else 0.
-            penalty = sum(env_pen) / len(env_pen) # average loss over classes
-            inv_running_penalty = model.module.inv_running_penalty.to(penalty.device).detach()
-            inv_running_penalty = args.inv_ema * inv_running_penalty + (1 - args.inv_ema) * penalty
-            model.module.inv_running_penalty = inv_running_penalty
-            
-            loss_inv = inv_weight * inv_running_penalty
+            if epoch >= args.inv_start:
+                inv_weight = args.inv_weight
+                penalty = sum(env_pen) / len(env_pen) # average loss over classes
+                real_model = model.module if isinstance(model, torch.nn.DataParallel) else model # real_model is a reference, so can update
+                inv_running_penalty = real_model.inv_running_penalty.to(penalty.device).detach()
+                inv_running_penalty = args.inv_ema * inv_running_penalty + (1 - args.inv_ema) * penalty
+                real_model.inv_running_penalty = inv_running_penalty
+                loss_inv = inv_weight * inv_running_penalty
+            else:
+                loss_inv = torch.Tensor([0.]).cuda()
 
         else:
             loss_inv = torch.Tensor([0.]).cuda()
@@ -874,13 +877,16 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
 
 
             # Invariance Term: mean of variances of contrastive losses of class-environments
-            inv_weight = args.inv_weight if epoch >= args.inv_start else 0.
-            penalty = sum(env_pen) / len(env_pen) # average loss over classes
-            inv_running_penalty = model.inv_running_penalty.to(penalty.device).detach()
-            inv_running_penalty = args.inv_ema * inv_running_penalty + (1 - args.inv_ema) * penalty
-            model.inv_running_penalty = inv_running_penalty
-            
-            loss_inv = inv_weight * inv_running_penalty
+            if epoch >= args.inv_start:
+                inv_weight = args.inv_weight
+                penalty = sum(env_pen) / len(env_pen) # average loss over classes
+                real_model = model.module if isinstance(model, torch.nn.DataParallel) else model # real_model is a reference, so can update
+                inv_running_penalty = real_model.inv_running_penalty.to(penalty.device).detach()
+                inv_running_penalty = args.inv_ema * inv_running_penalty + (1 - args.inv_ema) * penalty
+                real_model.inv_running_penalty = inv_running_penalty
+                loss_inv = inv_weight * inv_running_penalty
+            else:
+                loss_inv = torch.Tensor([0.]).cuda()
 
         else:
             loss_inv = torch.Tensor([0.]).cuda()

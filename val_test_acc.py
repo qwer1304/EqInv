@@ -29,12 +29,14 @@ def main(args):
 
         # Filter lines starting with '*'
         filtered_lines = [line for line in lines if line.lstrip().startswith("*")]
-
+        
         # Split
-        train_lines = filtered_lines[::3]
-        val_lines = filtered_lines[1::3]
-        test_lines = filtered_lines[2::3]
-
+        train_lines = [line for line in filtered_lines if line.lstrip().startswith("* Train")]
+        val_lines = [line for line in filtered_lines if line.lstrip().startswith("* Val")]
+        test_lines = [line for line in filtered_lines if line.lstrip().startswith("* Test")]
+        assert len(train_lines) == len(val_lines), 'train {} != val {}'.format(len(train_lines), len(val_lines))
+        assert len(test_lines) == len(val_lines), 'test {} != val {}'.format(len(test_lines), len(val_lines))
+        
         # Extract numbers
         train_acc = [extract_number(line) for line in train_lines]
         val_acc = [extract_number(line) for line in val_lines]
