@@ -133,6 +133,7 @@ class ResNet_ft_eqinv(nn.Module):
             self.mlp = nn.Sequential(nn.Linear(hidden_layer, 512, bias=False), nn.BatchNorm1d(512),
                                nn.ReLU(inplace=True), nn.Linear(512, 128, bias=True))
 
+        self.register_buffer('inv_running_penalty', torch.tensor([0]))
 
 
     def forward(self, image, return_feature=False, return_masked_feature=False):

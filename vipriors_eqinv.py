@@ -94,6 +94,7 @@ parser.add_argument('--pretrain_path', type=str, default=None, help='the path of
 parser.add_argument('--inv', type=str, default='rex', choices=['rex', 'rvp'], help='type of invariant loss')
 parser.add_argument('--inv_start', type=int, default=0, help='start epoch of inv loss')
 parser.add_argument('--inv_weight', default=1., type=float, help='the weight of invariance')
+parser.add_argument('--inv_ema', default=0., type=float, help='the weight of invariance EMA penalty. 0 - no EMA')
 parser.add_argument('--mlp', action="store_true", default=False, help='use mlp before the loss and feature?')
 parser.add_argument('--backbone_propagate', action="store_true", default=False, help='whether to propagate inv loss to backbone')
 parser.add_argument('--nonancenvirm', action="store_true", default=False, help='use non-anchor environment IRM for penalty')
@@ -667,7 +668,11 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
             # Invariance Term: mean of variances of contrastive losses of class-environments
             inv_weight = args.inv_weight if epoch >= args.inv_start else 0.
             penalty = sum(env_pen) / len(env_pen) # average loss over classes
-            loss_inv = inv_weight * penalty
+            inv_running_penalty = model.inv_running_penalty.to(penalty.device).detach()
+            inv_running_penalty = args.inv_ema * inv_running_penalty + (1 - args.inv_ema) * penalty
+            model.inv_running_penalty = inv_running_penalty
+            
+            loss_inv = inv_weight * inv_running_penalty
 
         else:
             loss_inv = torch.Tensor([0.]).cuda()
@@ -871,7 +876,11 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
             # Invariance Term: mean of variances of contrastive losses of class-environments
             inv_weight = args.inv_weight if epoch >= args.inv_start else 0.
             penalty = sum(env_pen) / len(env_pen) # average loss over classes
-            loss_inv = inv_weight * penalty
+            inv_running_penalty = model.inv_running_penalty.to(penalty.device).detach()
+            inv_running_penalty = args.inv_ema * inv_running_penalty + (1 - args.inv_ema) * penalty
+            model.inv_running_penalty = inv_running_penalty
+            
+            loss_inv = inv_weight * inv_running_penalty
 
         else:
             loss_inv = torch.Tensor([0.]).cuda()
