@@ -381,6 +381,7 @@ def main():
 
 
     if args.evaluate:
+        print(f"Staring evaluation name: {args.name}")
         if args.resume:
             epoch = args.start_epoch
         else:
@@ -459,6 +460,7 @@ def main():
         assert args.clusters_to_use is None or \
             max(args.clusters_to_use) <= args.num_clusters-1, "Largest cluster to use {} must be < {}".format(max(args.clusters_to_use), args.num_clusters)
 
+    print(f"Staring training name: {args.name}")
     for epoch in range(args.start_epoch, args.epochs):
 
         adjust_learning_rate(optimizer, init_lr, epoch, args)

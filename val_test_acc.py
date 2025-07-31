@@ -6,12 +6,38 @@ import subprocess
 import argparse
 
 def extract_number(line, keyword="Acc@1"):
-    pattern = rf"{keyword}\s+([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)"
+    pattern = rf"Epoch:\s*\[(\d+)\].*?{keyword}\s+([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)"
     match = re.search(pattern, line)
     if match:
-        return float(match.group(1))
+        epoch = int(match.group(1))
+        acc1 = float(match.group(2))
+        return (epoch, acc1)
     else:
         return None
+
+def find_common_epochs_with_indices(train_epochs, val_epochs, test_epochs):
+    i, j, k = 0, 0, 0
+    common = []
+
+    while i < len(train_epochs) and j < len(val_epochs) and k < len(test_epochs):
+        a, b, c = train_epochs[i], val_epochs[j], test_epochs[k]
+
+        if a == b == c:
+            common.append((a, i, j, k))
+            i += 1
+            j += 1
+            k += 1
+        else:
+            minimum = min(a, b, c)
+            if a == minimum:
+                i += 1
+            if b == minimum:
+                j += 1
+            if c == minimum:
+                k += 1
+
+    return common
+
 
 def main(args):
 
@@ -20,8 +46,15 @@ def main(args):
     # Read lines
     lines = []
     epilogue = False
+    name = None
     with open(fp, "r") as f:
         for line in f:
+
+            if "name:" in line:
+                key = "name:"
+                idx = line.find(key)
+                name = line[idx + len(key) + 1:] if idx != -1 else None
+                
             if "The best Val accuracy" in line:
                 epilogue = True
                 break
@@ -34,8 +67,8 @@ def main(args):
         train_lines = [line for line in filtered_lines if line.lstrip().startswith("* Train")]
         val_lines = [line for line in filtered_lines if line.lstrip().startswith("* Val")]
         test_lines = [line for line in filtered_lines if line.lstrip().startswith("* Test")]
-        assert len(train_lines) == len(val_lines), 'train {} != val {}'.format(len(train_lines), len(val_lines))
-        assert len(test_lines) == len(val_lines), 'test {} != val {}'.format(len(test_lines), len(val_lines))
+        #assert len(train_lines) == len(val_lines), 'train {} != val {}'.format(len(train_lines), len(val_lines))
+        #assert len(test_lines) == len(val_lines), 'test {} != val {}'.format(len(test_lines), len(val_lines))
         
         # Extract numbers
         train_acc = [extract_number(line) for line in train_lines]
@@ -46,7 +79,24 @@ def main(args):
         train_acc = [x for x in train_acc if x is not None]
         val_acc = [x for x in val_acc if x is not None]
         test_acc = [x for x in test_acc if x is not None]
-
+        
+        train_epochs, train_acc = zip(*train_acc)
+        train_epochs = list(train_epochs)
+        train_acc = list(train_acc)
+        val_epochs, val_acc = zip(*val_acc)
+        val_epochs = list(val_epochs)
+        val_acc = list(val_acc)
+        test_epochs, test_acc = zip(*test_acc)
+        test_epochs = list(test_epochs)
+        test_acc = list(test_acc)
+        
+        common_epochs = find_common_epochs_with_indices(train_epochs, val_epochs, test_epochs)
+        assert common_epochs, 'No common epochs'
+        
+        train_acc = [train_acc[ce[1]] for ce in common_epochs]
+        val_acc = [val_acc[ce[2]] for ce in common_epochs]
+        test_acc = [test_acc[ce[3]] for ce in common_epochs]
+        
         if epilogue:
             # Now process the rest of the file starting from the current line
             best_val_acc = extract_number(line, keyword="accuracy:")
@@ -75,7 +125,10 @@ def main(args):
     ax[0].set_ylabel("Acc")
     ax[0].legend()
     ax[0].set_title("Accuracies")
-    ax[0].grid(True)
+    ax[0].set_yticks(list(range(0,101,10)))
+    ax[0].minorticks_on()
+    ax[0].grid(True, which='major', linestyle='-', linewidth=0.75)
+    ax[0].grid(True, which='minor', linestyle=':', linewidth=0.50)
 
     ax[1].scatter(val_acc, test_acc, marker='.')
     ax[1].scatter(best_val_acc2, test_best_val_acc2, marker='x', label='Best Val', s=50, linewidths=3, color="magenta")
@@ -116,6 +169,9 @@ def main(args):
     # Plot
     ax[1].plot(x_fit, y_fit, color='red', label=f"y = f(x)".replace("+", "+ ").replace("-", "- "))
     ax[1].legend()
+    
+    if name is not None:
+        plt.suptitle(name, fontsize=16)
 
     fp = os.path.join(args.dir, args.output_fn)
     plt.savefig(fp, format='jpg')
