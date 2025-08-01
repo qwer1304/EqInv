@@ -34,6 +34,7 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
         anchor_class_set = [anchor_class]
 
     env_set = {}
+    env_set_dist = {}
     for anchor_class_ in anchor_class_set:
         print('cosine distance to anchor class {}'.format(anchor_class_)) #, end='')
         anchor_mask = feature_labels_digit == anchor_class_
@@ -89,9 +90,10 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
         If such division is not possible, this function may return fewer than the specified number of chunks.
         """
         env_set[anchor_class_] = torch.chunk(candidate_idx_sort, K) # K environments
+        env_set_dist[anchor_class_] = sim_all
 
     if return_dist:
-        return env_set, sim_all
+        return env_set, env_set_dist
     else:
         return env_set
 

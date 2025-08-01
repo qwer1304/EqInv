@@ -454,6 +454,7 @@ def main():
             env_ref_set, dist = utils_cluster.cal_cosine_distance(model, memory_loader, args.class_num, temperature=args.cluster_temp, 
                 anchor_class=None, class_debias_logits=True, return_dist=True, K=args.num_clusters)
             os.makedirs(os.path.dirname(fp_dist), exist_ok=True)
+            # dist is a dictionary with anchor classes as keys of similarity scores
             torch.save(dist, fp_dist)
             print(f"Cluster distances saved in {fp_dist}")
         else:
