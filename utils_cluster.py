@@ -53,6 +53,7 @@ def cal_cosine_distance(net, memory_data_loader, c, temperature, anchor_class=No
             sim_matrix = torch.mm(candidate_feature_batch, anchor_feature) # (bNc,Na)
             if temperature > 0:
                 sim_matrix = (sim_matrix / temperature).exp()
+            assert torch.isfinite(sim_matrix).all().item(), 'sim matrix is not finite' 
             sim_batch = sim_matrix.mean(dim=-1) # (bNc,)
             sim_all.append(sim_batch)
         sim_all = torch.cat(sim_all, dim=0).contiguous() # (Nc,)

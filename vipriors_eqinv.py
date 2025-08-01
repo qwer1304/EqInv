@@ -455,7 +455,6 @@ def main():
                 anchor_class=None, class_debias_logits=True, return_dist=True, K=args.num_clusters)
             os.makedirs(os.path.dirname(fp_dist), exist_ok=True)
             # dist is a dictionary with anchor classes as keys of similarity scores
-            print(dist)
             torch.save(dist, fp_dist)
             print(f"Cluster distances saved in {fp_dist}")
         else:
