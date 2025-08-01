@@ -4,6 +4,7 @@ import numpy as np
 import os
 import subprocess  
 import argparse
+import textwrap
 
 def extract_number(line, keyword="Acc@1"):
     pattern = rf"Epoch:\s*\[(\d+)\].*?{keyword}\s+([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)"
@@ -113,7 +114,8 @@ def main(args):
     print(f"val-test acc correlation: {corr[0,1]}")
 
     # Plot
-    fig, ax = plt.subplots(1, 2, figsize=(2*5, 4))
+    fig, ax = plt.subplots(1, 2, figsize=(3.5*5, 6))
+    fig.subplots_adjust(top=0.85)
 
     ax[0].plot(range(len(train_acc)), train_acc, label='Train', marker='o')
     ax[0].plot(range(len(val_acc)), val_acc, label='Val', marker='+')
@@ -171,7 +173,8 @@ def main(args):
     ax[1].legend()
     
     if name is not None:
-        plt.suptitle(name, fontsize=16)
+        wrapped_title = "\n".join(textwrap.wrap(name, width=50))
+        plt.suptitle(wrapped_title, fontsize=12, y=0.98)
 
     fp = os.path.join(args.dir, args.output_fn)
     plt.savefig(fp, format='jpg')

@@ -393,6 +393,17 @@ def main():
         return
 
 
+    # Model loading order:
+    # 1. Deafult model
+    # 2. Pretrained model
+    # 3. Checkpointed model
+    
+    # Cluster creation / loading order:
+    # 0. Load given cluster (see loading order above)
+    # 1. Load most recent in cluster save directory, if exists
+    # 2. Create cluster from loaded model.
+    #    Suffix reflects the model used: 'resumed', 'pretrained', 'default'
+    
     #### Process Cluster
     assert args.stage1_model == 'ipirm'
     # number of images per class when training ip-irm

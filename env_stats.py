@@ -231,7 +231,7 @@ def main(args):
 
         ax[i].set_ylabel('Percentage (%)')
         ax[i].set_xlabel('Color')
-        ax[i].set_title(textwrap.fill(f'Split of colors R/G between all envs for NON-anchor samples for anchor {k}', width=ttl_width))
+        ax[i].set_title(textwrap.fill(f'Split of colors R/G between all envs for all samples for anchor {k}', width=ttl_width))
         ax[i].set_xticks(np.mean(xpos, axis=0).tolist())
         ax[i].set_xticklabels(labels)
         ax[i].legend(loc='center')
@@ -241,8 +241,7 @@ def main(args):
 
         # How to handle final display or saving
         if is_notebook():
-            # In notebook, it automatically displays inline
-            pass
+            plt.show()
         elif is_headless():
             plt.savefig(f"plot_{k}.png")
             plt.close()  # Close figure to avoid duplicate output and free memory
