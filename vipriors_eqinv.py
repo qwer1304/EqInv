@@ -440,6 +440,7 @@ def main():
             fp = fp_exist
             
     else:
+        directory = f'misc/{args.name}'
         fp = args.cluster_path
         
     fp_dist = os.path.join(directory, 'env_ref_dist')
