@@ -241,13 +241,13 @@ def main(args):
 
         # How to handle final display or saving
         if is_notebook():
-            plt.show()
+            plt.show(); 
         elif is_headless():
             plt.savefig(f"plot_{k}.png")
             plt.close()  # Close figure to avoid duplicate output and free memory
             print(f"Plot saved to plot{k}.png (headless mode).")
         else:
-            plt.show(block = (k == len(env_ref_set)-1 and i == 1))
+            plt.show(block = (k == len(env_ref_set)-1 and i == 1));
             
         col_a = np.tile(col_a, (K, 1))  # repeat vertically, env x col
         env_tar = np.array([[np.sum(col_a[j]), np.sum(env_col[j])] for j in range(len(col_a))])
