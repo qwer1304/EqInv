@@ -28,6 +28,8 @@ from torchvision.models.resnet import resnet50
 
 import hashlib
 
+import autograd
+
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
                      and callable(models.__dict__[name]))
@@ -91,7 +93,7 @@ parser.add_argument('--pretrain_model', action="store_true", default=False, help
 parser.add_argument('--pretrain_path', type=str, default=None, help='the path of pretrain model')
 
 # invariance
-parser.add_argument('--inv', type=str, default='rex', choices=['rex', 'rvp'], help='type of invariant loss')
+parser.add_argument('--inv', type=str, default='rex', choices=['rex', 'rvp', 'irmv1'], help='type of invariant loss')
 parser.add_argument('--inv_start', type=int, default=0, help='start epoch of inv loss')
 parser.add_argument('--inv_weight', default=1., type=float, help='the weight of invariance')
 parser.add_argument('--inv_ema', default=0., type=float, help='the weight of invariance EMA penalty. 0 - no EMA')
@@ -514,6 +516,15 @@ def main():
     utils.write_log('\nStart to test on Test Set', args.log_file, print_=True)
     acc1_test = validate(test_loader, model, criterion, args, epoch, prefix='Test: ')
 
+def _irm_penalty(logits, y):
+    device = "cuda" if logits[0][0].is_cuda else "cpu"
+    scale = torch.tensor(1.).to(device).requires_grad_()
+    loss_1 = F.cross_entropy(logits[::2] * scale, y[::2])
+    loss_2 = F.cross_entropy(logits[1::2] * scale, y[1::2])
+    grad_1 = autograd.grad(loss_1, [scale], create_graph=True)[0]
+    grad_2 = autograd.grad(loss_2, [scale], create_graph=True)[0]
+    result = torch.sum(grad_1 * grad_2)
+    return result
 
 def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, criterion_tuple, optimizer, epoch, args):
     criterion_ERM, criterion_cont, criterion_inv = criterion_tuple
@@ -668,17 +679,22 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                     # nll of "other" in this environment appended to list
                     # output = fc(mask(model(x))
                     env_nll.append(criterion_inv(output_env, target_num_env)) 
-                    temp_pen.append(env_nll[-1]) # loss of this environment appended to list
-
+                    if args.inv == "irmv1":
+                        temp_pen.append(_irm_penalty(output_env, target_num_env))
+                    else:
+                        temp_pen.append(env_nll[-1]) # loss of this environment appended to list
+                # end for env_idx in range(len(env_ref_set_class))
+                
                 if args.inv == 'rex':
                     env_pen.append(torch.var(torch.stack(temp_pen))) # varaince of losses of the environments appended to list of losses of all classes
                 elif args.inv == 'rvp':
                     epsilon = 1e-8
                     env_pen.append(torch.std(torch.stack(temp_pen)) + epsilon) # std of losses of the environments appended to list of losses of all classes
+                elif args.inv == "irmv1":
+                    env_pen.append(torch.stack(temp_pen).mean())
                 else:
                     raise ValueError(f'invalid inv method {args.inv}')
                 temp_pen = []
-
 
             # Invariance Term: mean of variances of contrastive losses of class-environments
             if epoch >= args.inv_start:
@@ -691,7 +707,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                 loss_inv = inv_weight * inv_running_penalty
             else:
                 loss_inv = torch.Tensor([0.]).cuda()
-
+            # end for class_idx in range(args.class_num):
         else:
             loss_inv = torch.Tensor([0.]).cuda()
 
