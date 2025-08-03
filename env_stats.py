@@ -214,6 +214,7 @@ def main(args):
         # number of anchor samples for color c 
         fraction = args.anchor_fraction
 
+        r=np.random.default_rng()
         idxs_a = r.choice(len(env_a), int(fraction*len(env_a)), replace=False) 
 
         col_a = np.array([
@@ -331,7 +332,7 @@ def main(args):
         
         # Setting up the 1st level table
         table1 = BeautifulTable(maxwidth=80)
-        table1.columns.header = ['non-anchor', 'anchor', 'label', f'color/label fraction={fraction:.1f}']
+        table1.columns.header = ['non-anchor', 'anchor', 'label', f'color/label\nfraction={fraction:.1f}']
         table1.rows.append([*table2, table2a])
         table1.set_style(BeautifulTable.STYLE_BOX)
         table1.border.left = ''
