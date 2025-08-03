@@ -212,9 +212,13 @@ def main(args):
         i += 1
 
         # number of anchor samples for color c 
+        fraction = args.anchor_fraction
+
+        idxs_a = r.choice(len(env_a), int(fraction*len(env_a)), replace=False) 
+
         col_a = np.array([
-            sum([memory_images.imgs[j][label] // num_labels == R for j in env_a]),
-            sum([memory_images.imgs[j][label] // num_labels == G for j in env_a])
+            sum([memory_images.imgs[env_a[j]][label] // num_labels == R for j in idxs_a]),
+            sum([memory_images.imgs[env_a[j]][label] // num_labels == G for j in idxs_a])
             ])
             
         perc = (env_col + col_a) / (env_col + col_a).sum(axis=0, keepdims=True) * 100 # (env, col)        
@@ -231,7 +235,7 @@ def main(args):
 
         ax[i].set_ylabel('Percentage (%)')
         ax[i].set_xlabel('Color')
-        ax[i].set_title(textwrap.fill(f'Split of colors R/G between all envs for all samples for anchor {k}', width=ttl_width))
+        ax[i].set_title(textwrap.fill(f'Split of colors R/G between all envs for all non-anchor and {fraction} anchor samples for anchor {k}', width=ttl_width))
         ax[i].set_xticks(np.mean(xpos, axis=0).tolist())
         ax[i].set_xticklabels(labels)
         ax[i].legend(loc='center')
@@ -269,7 +273,7 @@ def main(args):
 
         corre_na = []
         r=np.random.default_rng()
-        fraction = 0.1
+        fraction = args.anchor_fraction
 
         for e in range(K):
             idxs_a = r.choice(len(env_a), int(fraction*len(env_a)), replace=False) 
@@ -327,7 +331,7 @@ def main(args):
         
         # Setting up the 1st level table
         table1 = BeautifulTable(maxwidth=80)
-        table1.columns.header = ['non-anchor', 'anchor', 'label', 'color/label']
+        table1.columns.header = ['non-anchor', 'anchor', 'label', f'color/label fraction={fraction:.1f}']
         table1.rows.append([*table2, table2a])
         table1.set_style(BeautifulTable.STYLE_BOX)
         table1.border.left = ''
@@ -396,6 +400,7 @@ if __name__ == "__main__":
     parser.add_argument('--fp', type=str, help='path of cluster file')
     parser.add_argument('--data', type=str, default='./data/DataSets/CMNIST_wcolor/64')
     parser.add_argument('--title_width', type=int, default=40)
+    parser.add_argument('--anchor_fraction', type=float, default=0.1, help='Fraction of anchors to include in envs')
     
     args = parser.parse_args()
     
