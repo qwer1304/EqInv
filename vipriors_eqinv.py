@@ -729,7 +729,9 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
 
 
         loss_all = loss_erm + loss_cont + loss_inv
-
+        assert torch.isfinite(loss_inv).item(), 'loss_inv not finite' 
+        assert torch.isfinite(loss_cont).item(), 'loss_cont not finite' 
+        assert torch.isfinite(loss_erm).item(), 'loss_erm not finite' 
 
         # measure accuracy and record loss
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
@@ -940,6 +942,9 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
 
 
         loss_all = loss_erm + loss_cont + loss_inv
+        assert torch.isfinite(loss_inv).item(), 'loss_inv not finite' 
+        assert torch.isfinite(loss_cont).item(), 'loss_cont not finite' 
+        assert torch.isfinite(loss_erm).item(), 'loss_erm not finite' 
 
 
         # measure accuracy and record loss
