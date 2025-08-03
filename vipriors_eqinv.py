@@ -12,6 +12,7 @@ import torch.nn as nn
 import torch.nn.parallel
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
+from torch import autograd
 
 import torch.optim
 
@@ -27,8 +28,6 @@ from torchvision.models.resnet import resnet50
 #from randaugment import RandAugment
 
 import hashlib
-
-import autograd
 
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
