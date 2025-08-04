@@ -21,6 +21,7 @@ def main(args):
             
         features = []
         labels = []
+        labels_raw = []
         domains = []
         logits = []
         # Load
@@ -29,12 +30,16 @@ def main(args):
             features.append(data['features'].numpy())  # convert to numpy
             targets = data['labels'].numpy()
             labels.append(targets)
+            labels_raw.append(data['logits_raw'].numpy())
             domains.append(i*np.ones_like(targets))
             logits.append(data['logits'].numpy())
-        features  = np.concatenate(features, axis=0)
-        labels    = np.concatenate(labels, axis=0)
-        domains   = np.concatenate(domains, axis=0)
-        logits    = np.concatenate(logits, axis=0)
+        features    = np.concatenate(features, axis=0)
+        labels      = np.concatenate(labels, axis=0)
+        labels_raw  = np.concatenate(labels_raw, axis=0)
+        domains     = np.concatenate(domains, axis=0)
+        logits      = np.concatenate(logits, axis=0)
+        predicts    = np.argmax(logits, axis=1)
+        
         # model parameters
         weights   = data['head_weights'].detach().numpy() # (num_classes, embed_dim)
         biases    = data['head_bias'].detach().numpy()    # (num_classes,)
@@ -62,9 +67,11 @@ def main(args):
         np.save(os.path.join(dir,f"features_2d_{args.method}_{args.model}.npy"), features_2d)
         np.save(os.path.join(dir,f"weights_2d_{args.model}.npy"), weights_2d)
         np.save(os.path.join(dir,f"labels_{args.model}.npy"), labels)
+        np.save(os.path.join(dir,f"labels_raw_{args.model}.npy"), labels_raw)
         np.save(os.path.join(dir,f"domains_{args.model}.npy"), domains)
         np.save(os.path.join(dir,f"biases_{args.model}.npy"), biases)
         np.save(os.path.join(dir,f"logits_{args.model}.npy"), logits)
+        np.save(os.path.join(dir,f"predicts_{args.model}.npy"), predicts)
         print('Done!')
 
     else:
@@ -72,12 +79,14 @@ def main(args):
         features_2d = np.load(os.path.join(dir,f"features_2d_{args.method}_{args.model}.npy"))
         weights_2d = np.load(os.path.join(dir,f"weights_2d_{args.model}.npy"))
         labels = np.load(os.path.join(dir,f"labels_{args.model}.npy"))
+        labels_raw = np.load(os.path.join(dir,f"labels_raw_{args.model}.npy"))
         domains = np.load(os.path.join(dir,f"domains_{args.model}.npy"))
         biases = np.load(os.path.join(dir,f"biases_{args.model}.npy"))
         logits = np.load(os.path.join(dir,f"logits_{args.model}.npy"))
+        predicts = np.load(os.path.join(dir,f"predicts_{args.model}.npy"))
         print('Done!')
 
-    fig, axs = plt.subplots(1, 2, figsize=(12, 5))  # 1 row, 2 columns
+    fig, axs = plt.subplots(2, 2, figsize=(2*5, 2*7))  # 2 row, 2 columns
     cmap = plt.cm.tab10
     n_cols = 10
     coloffset = 0
@@ -88,10 +97,9 @@ def main(args):
     i = 0
     lls = labels
     target = "class"
+    print('Plotting classes ... ', end="")
 
     u_lls = np.unique(lls)
-
-    print('Plotting classes ... ', end="")
 
     handles = []
     markers = ['8', '*']
@@ -104,10 +112,10 @@ def main(args):
         size_w = max(300-j*100,50)
 
         # Features scatter
-        axs[i].scatter(features_2d[fidx, 0], features_2d[fidx, 1], alpha=0.4, s=4, marker="o", color=domain_feat, zorder=1)
+        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.2, s=4+4*j, marker=".", color=domain_feat, zorder=len(u_lls)-j)
 
         # Weights scatter
-        axs[i].scatter(weights_2d[j, 0], weights_2d[j, 1], alpha=1.0, s=size_w, marker=marker_w, color=domain_w, zorder=2)
+        axs[i].scatter(weights_2d[j, 0], weights_2d[j, 1], alpha=1.0, s=size_w, marker=marker_w, color=domain_w, zorder=len(u_lls)+1)
 
         # Create proxy handles for legend
         feature_proxy = mlines.Line2D([], [], color=domain_feat, marker="o", linestyle="None",
@@ -156,7 +164,7 @@ def main(args):
     
     
     # Add annotated arrows to '0' and '1' decision spaces. 
-    normal = np.array([dx, dy], dtype=float)
+    normal = np.array([dx, dy*0.4], dtype=float)
     normal /= np.linalg.norm(normal)
     
     # Tangent vector (perpendicular to normal)
@@ -192,24 +200,23 @@ def main(args):
     
     print('Done!')
   
-    axs[i].legend(handles=handles, loc='lower right', ncol=len(u_lls))
+    axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls))
     axs[i].set_title(f"{args.method} domained by {target}")
 
     i += 1
     lls = domains
     target = "domain"
-
-    u_lls = np.unique(lls)
-
     print('Plotting domains ... ', end="")
     
+    u_lls = np.unique(lls)
+
     handles = []
 
     for j, l in enumerate(u_lls):
         fidx = (lls == l)
         domain_feat = cmap((j + coloffset) % n_cols)
         # Features scatter
-        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.4, s=4, marker="o", color=domain_feat, zorder=1)
+        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.2, s=4+4*j, marker=".", color=domain_feat, zorder=len(u_lls)-j)
         # Create proxy handles for legend
         feature_proxy = mlines.Line2D([], [], color=domain_feat, marker="o", linestyle="None",
                                       markersize=6, label=f"{target}: {l}")
@@ -220,83 +227,36 @@ def main(args):
     axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls))
     axs[i].set_title(f"{args.method} domained by {target}")
     
+    i += 1
+    lls = predicts != labels
+    test_samples = domains == 1
+    target = "predicts"
+    coloffset = 2
+    print('Plotting predicts ... ', end="")
+    
+    u_lls = np.unique(lls)
+
+    handles = []
+
+    for j, l in enumerate(u_lls):
+        fidx = (lls == l) & test_samples
+        domain_feat = cmap((coloffset + j) % n_cols)
+        # Features scatter
+        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.2, s=4+4*j, marker=".", color=domain_feat, zorder=len(u_lls)-j)
+        # Create proxy handles for legend
+        feature_proxy = mlines.Line2D([], [], color=domain_feat, marker="o", linestyle="None",
+                                      markersize=6, label=f"{target}: {'Wrong' if l else 'Correct'}")
+        handles.append(feature_proxy)
+   
+    print('Done')
+
+    axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls))
+    axs[i].set_title(f"{args.method} domained by {target} @ test")
+
     fig.suptitle(f"model: {args.model}")
 
     plt.savefig(os.path.join(dir, f"{args.method}_{args.model}.jpg"), format='jpg')
     os.startfile(os.path.abspath(os.path.join(dir, f"{args.method}_{args.model}.jpg")))
-
-
-    """
-    # Step 1: Compute logits from 2048D features
-    margin = logits[:, 1] - logits[:, 0]    # margin > 0 -> class 1
-
-    # Step 2: Interpolate margins over a grid in UMAP space
-    x, y = features_2d[:, 0], features_2d[:, 1]
-    grid_x, grid_y = np.meshgrid(
-        np.linspace(x.min(), x.max(), 300),
-        np.linspace(y.min(), y.max(), 300)
-    )
-    print(features_2d[:-2].shape, margin.shape)
-    grid_margin = griddata(points=features_2d, values=margin, xi=(grid_x, grid_y), method='cubic')
-
-    # Step 3: Plot the margin and decision boundary (margin = 0)
-    plt.figure(figsize=(6, 5))
-    plt.contour(grid_x, grid_y, grid_margin, levels=[0], colors='black', linewidths=2)
-    plt.scatter(x, y, c=margin, cmap='coolwarm', s=5, alpha=0.6)
-    plt.colorbar(label='logit_1 - logit_0 (margin)')
-    plt.title("Classifier decision boundary in UMAP space")
-    plt.show()
-    """
-    
-    """
-    # Assume you already have these:
-    # features: [N, D]
-    # logits: [N, 2]
-    # labels: [N] ground truth
-    # fc_weight: [2, D]
-    # fc_bias: [2]
-       
-    # 3. Compute the effective 2D classifier normal
-    w0_2d = weights_2d[0]
-    w1_2d = weights_2d[1]
-    w_diff_2d = w0_2d - w1_2d  # shape [1, 2]
-    w_diff_2d = w_diff_2d.flatten()  # shape [2]
-    
-    # 4. Project the 1D bias (difference)
-    b_diff = biases[0] - biases[1]
-    
-    # 5. Plot the points
-    #plt.figure(figsize=(8, 6))
-    #scatter = plt.scatter(features_2d[:, 0], features_2d[:, 1], c=labels, cmap='coolwarm', alpha=0.6)
-    #plt.legend(*scatter.legend_elements(), title="Class")
-    
-    # 6. Compute midpoint of decision boundary
-    # We'll use the average of projected weights as a point on the line
-    midpoint = (w0_2d + w1_2d).flatten() / 2
-    
-    # 7. Plot the decision boundary
-    # The boundary is orthogonal to w_diff_2d and passes through the midpoint
-    # So we define a line: (x - x0, y - y0) \dot w_diff_2d = 0
-    
-    x_vals = np.linspace(features_2d[:, 0].min(), features_2d[:, 0].max(), 200)
-    # solve for y using (x - x0) * dx + (y - y0) * dy = 0 => y = y0 - dx/dy * (x - x0)
-    dx, dy = w_diff_2d
-    if abs(dy) < 1e-6:
-        # Vertical line
-        axs[0].axvline(x=midpoint[0], color='black', linestyle='--', label='Decision boundary')
-    else:
-        y_vals = midpoint[1] - (dx / dy) * (x_vals - midpoint[0])
-        axs[0].plot(x_vals, y_vals, 'k--', label='Decision boundary')
-    
-    #plt.title("UMAP projection with classifier decision boundary")
-    #plt.xlabel("UMAP-1")
-    #plt.ylabel("UMAP-2")
-    #plt.grid(True)
-    #plt.legend()
-    plt.show()
-    """
-
-
 
     
 if __name__ == "__main__":

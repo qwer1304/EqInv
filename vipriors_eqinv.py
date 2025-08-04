@@ -993,18 +993,28 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
         end = time.time()
         masked_feature_erm_list = []
         target_list = []
+        target_raw_list = []
         output_list = []
+        target_transform = val_loader.target_transform
+        if args.extract_features:
+            val_loader.target_transform = None
+            
         for i, (images, target, images_idx) in enumerate(val_loader):
-
             images = images.cuda(non_blocking=True)
             target = target.cuda(non_blocking=True)
+            target_raw = target
+            if args.extract_features and traget_transform is not None:
+                target = target_transform(target_raw).cuda(non_blocking=True)
 
             # compute output
             if args.extract_features:
+                    mlp = model.module.args.mlp
                     model.module.args.mlp = False
                     masked_feature_erm, _, output = model(images, return_masked_feature=True)
+                    model.module.args.mlp = mlp
                     masked_feature_erm_list.append(masked_feature_erm)
                     target_list.append(target)
+                    target_raw_list.append(target_raw)
                     output_list.append(output)
             else:
                 output = model(images)
@@ -1043,9 +1053,10 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             os.makedirs(os.path.dirname(fp), exist_ok=True)
 
             torch.save({
-                'features': masked_feature_erm,
-                'labels':   target,
-                'logits':   output,
+                'features':     masked_feature_erm,
+                'labels':       target,
+                'labels_raw':   target_raw,
+                'logits':       output,
                 'model_epoch':  epoch,
                 'head_weights': model.module.fc.weight,  # shape: (num_classes, embed_dim)
                 'head_bias':    model.module.fc.bias,    # shape: (num_classes,)
@@ -1054,6 +1065,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             print(f"Dumped features into {fp}")
             
         progress.display_summary(epoch)
+        val_loader.target_transform = target_transform
 
     return top1.avg
 
