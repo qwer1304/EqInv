@@ -1003,7 +1003,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             images = images.cuda(non_blocking=True)
             target = target.cuda(non_blocking=True)
             target_raw = target
-            if args.extract_features and traget_transform is not None:
+            if args.extract_features and target_transform is not None:
                 target = target_transform(target_raw).cuda(non_blocking=True)
 
             # compute output
