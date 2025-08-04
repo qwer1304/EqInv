@@ -1045,6 +1045,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
         if masked_feature_erm_list:
             masked_feature_erm = torch.cat(masked_feature_erm_list, dim=0)
             target = torch.cat(target_list, dim=0)
+            target_raw = torch.cat(target_raw_list, dim=0)
             output = torch.cat(output_list, dim=0)
             # Save to file
             prefix = "test" if "Test" in prefix else "val"

@@ -30,7 +30,9 @@ def main(args):
             features.append(data['features'].numpy())  # convert to numpy
             targets = data['labels'].numpy()
             labels.append(targets)
-            labels_raw.append(data['logits_raw'].numpy())
+            targets_raw = data['labels_raw'].numpy()
+            labels_raw.append(targets_raw)
+            print(len(targets),len(targets_raw))
             domains.append(i*np.ones_like(targets))
             logits.append(data['logits'].numpy())
         features    = np.concatenate(features, axis=0)
@@ -84,9 +86,11 @@ def main(args):
         biases = np.load(os.path.join(dir,f"biases_{args.model}.npy"))
         logits = np.load(os.path.join(dir,f"logits_{args.model}.npy"))
         predicts = np.load(os.path.join(dir,f"predicts_{args.model}.npy"))
+        n_classes = weights_2d.shape[0]
         print('Done!')
 
-    fig, axs = plt.subplots(2, 2, figsize=(2*5, 2*7))  # 2 row, 2 columns
+    fig, axs = plt.subplots(2, 2, figsize=(2*7, 2*5))  # 2 row, 2 columns
+    axs = axs.flatten()
     cmap = plt.cm.tab10
     n_cols = 10
     coloffset = 0
@@ -164,14 +168,14 @@ def main(args):
     
     
     # Add annotated arrows to '0' and '1' decision spaces. 
-    normal = np.array([dx, dy*0.4], dtype=float)
+    normal = np.array([dx, dy*1.0], dtype=float)
     normal /= np.linalg.norm(normal)
     
     # Tangent vector (perpendicular to normal)
     tangent = np.array([-dy, dx], dtype=float)
     tangent /= np.linalg.norm(tangent)
     
-    arrow_length = 3.0
+    arrow_length = 5.0
     tangent_offset = 0.5  # how far to slide along the boundary
 
     for direction, label, color, align, t_offset in [
@@ -192,7 +196,7 @@ def main(args):
                         arrowprops=dict(arrowstyle='->', color=color, lw=2))
 
         # Label: offset from arrowhead in the same direction
-        label_pos = head + direction * normal * 0.1
+        label_pos = head + direction * normal * 4.0
 
         axs[i].text(*label_pos, label,
                     fontsize=12, color=color,
@@ -252,6 +256,31 @@ def main(args):
 
     axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls))
     axs[i].set_title(f"{args.method} domained by {target} @ test")
+
+    i += 1
+    lls = labels_raw // n_classes
+    target = "colors"
+    coloffset = 2
+    print('Plotting colors ... ', end="")
+    
+    u_lls = np.unique(lls)
+    
+    handles = []
+
+    for j, l in enumerate(u_lls):
+        fidx = (lls == l)
+        domain_feat = cmap((coloffset + j) % n_cols)
+        # Features scatter
+        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.2, s=4+4*j, marker=".", color=domain_feat, zorder=len(u_lls)-j)
+        # Create proxy handles for legend
+        feature_proxy = mlines.Line2D([], [], color=domain_feat, marker="o", linestyle="None",
+                                      markersize=6, label=f"{target}: {'Red' if l else 'Green'}")
+        handles.append(feature_proxy)
+   
+    print('Done')
+
+    axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls))
+    axs[i].set_title(f"{args.method} domained by {target}")
 
     fig.suptitle(f"model: {args.model}")
 
