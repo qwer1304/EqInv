@@ -995,9 +995,9 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
         target_list = []
         target_raw_list = []
         output_list = []
-        target_transform = val_loader.target_transform
+        target_transform = val_loader.dataset.target_transform
         if args.extract_features:
-            val_loader.target_transform = None
+            val_loader.dataset.target_transform = None
             
         for i, (images, target, images_idx) in enumerate(val_loader):
             images = images.cuda(non_blocking=True)
@@ -1065,7 +1065,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             print(f"Dumped features into {fp}")
             
         progress.display_summary(epoch)
-        val_loader.target_transform = target_transform
+        val_loader.dataset.target_transform = target_transform
 
     return top1.avg
 
