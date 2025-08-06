@@ -477,7 +477,7 @@ def main():
     print(f"Staring training name: {args.name}")
     for epoch in range(args.start_epoch, args.epochs):
 
-        if  epoch == args.adam and epoch == args.inv_start and args.inv_weight > 0 and args.nonancenvirm:
+        if  args.adam and epoch == args.inv_start and args.inv_weight > 0 and args.nonancenvirm:
             optimizer = torch.optim.Adam(model.parameters(), lr=init_lr, weight_decay=0.)
 
         adjust_learning_rate(optimizer, init_lr, epoch, args)
