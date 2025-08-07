@@ -631,7 +631,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
         weights = torch.cat([weights, weights], dim=0)
         images_idx = images_idx.to(target.device)
 
-        if args.inv_weight > 0:
+        if args.inv_weight > 0 and epoch >= args.inv_start:
             # compute envs for different classes
             env_nll, env_pen, temp_pen = [], [], []
             for class_idx in range(args.class_num):
@@ -753,7 +753,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
             else:
                 loss_inv = torch.Tensor([0.]).cuda()
             # end for class_idx in range(args.class_num):
-        else: # args.inv_weight == 0:
+        else: # args.inv_weight == 0 or epoch < args.inv_start:
             loss_inv = torch.Tensor([0.]).cuda()
 
 
