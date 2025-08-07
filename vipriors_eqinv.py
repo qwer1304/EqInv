@@ -102,6 +102,8 @@ parser.add_argument('--mlp', action="store_true", default=False, help='use mlp b
 parser.add_argument('--backbone_propagate', action="store_true", default=False, help='whether to propagate inv loss to backbone')
 parser.add_argument('--nonancenvirm', action="store_true", default=False, help='use non-anchor environment IRM for penalty')
 parser.add_argument('--pos_samples_fraction_in_inv', default=0., type=float, help='[0..1], fraction of positive samples to use in inv loss calculation')
+parser.add_argument('--sand_k', default=10., type=float, help='SAND-mask k - steepness of mask')
+parser.add_argument('--sand_tau', default=0.7, type=float, help='SAND-mask tau - fraction of agreeing environments')
 
 # image
 parser.add_argument('--image_size', type=int, default=224, help='image size')
@@ -792,7 +794,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
         optimizer.zero_grad()
         if args.inv == "sand" and epoch >= args.inv_start:
             # gradient masking applied here
-            _mask_grads(env_pen, model, args.inv_weight)
+            _mask_grads(env_pen, model, k=args.sand_k, tau=args.sand_tau)
         else:
             loss_all.backward()
         optimizer.step()
