@@ -633,7 +633,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
         weights = torch.cat([weights, weights], dim=0)
         images_idx = images_idx.to(target.device)
 
-        if args.inv_weight > 0 and epoch >= args.inv_start:
+        if epoch >= args.inv_start and (args.inv_weight > 0 or args.inv == "sand"):
             # compute envs for different classes
             env_nll, env_pen, temp_pen = [], [], []
             for class_idx in range(args.class_num):
