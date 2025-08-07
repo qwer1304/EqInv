@@ -790,7 +790,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
-        if args.inv == "sand":
+        if args.inv == "sand" and epoch >= args.inv_start:
             # gradient masking applied here
             _mask_grads(env_pen, model, args.inv_weight)
         else:
