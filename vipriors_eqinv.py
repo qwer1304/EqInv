@@ -730,7 +730,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                 elif args.inv == "irmv1":
                     env_pen.append(torch.stack(temp_pen).mean())
                 elif args.inv == "sand":
-                    env_pen.append(_sand_penalty(temp_pen, model)
+                    env_pen.append(_sand_penalty(temp_pen, model))
                 else:
                     raise ValueError(f'invalid inv method {args.inv}')
                 temp_pen = []
