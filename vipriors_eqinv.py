@@ -29,6 +29,8 @@ from torchvision.models.resnet import resnet50
 
 import hashlib
 
+from itertools import chain
+
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
                      and callable(models.__dict__[name]))
@@ -528,6 +530,39 @@ def _irm_penalty(logits, y):
     result = torch.sum(grad_1 * grad_2)
     return result
 
+def _sand_penalty(env_loss_list, model):
+    real_model = model.module if isinstance(model, torch.nn.DataParallel) else model # real_model is a reference, so can update
+    params = list(chain(real_model.model.parameters(), real_model.fc.parameters()))
+    param_gradients = [[] for _ in params]
+    for env_loss in env_loss_list):
+        env_grads = autograd.grad(env_loss, params, retain_graph=True)
+        for grads, env_grad in zip(param_gradients, env_grads):
+            grads.append(env_grad)
+    return param_gradients
+
+def _mask_grads(gradients, model, k=10., tau=0.7):
+    """
+    Here a mask with continuous values in the range [0,1] is formed to control the amount of update for each
+    parameter based on the agreement of gradients coming from different environments.
+    """
+    real_model = model.module if isinstance(model, torch.nn.DataParallel) else model # real_model is a reference, so can update
+    device = gradients[0][0].device
+    params = list(chain(real_model.model.parameters(), real_model.fc.parameters()))
+    for param, grads in zip(params, gradients):
+        grads = torch.stack(grads, dim=0)
+        avg_grad = torch.mean(grads, dim=0)
+        grad_signs = torch.sign(grads)
+        gamma = torch.tensor(1.0).to(device)
+        grads_var = grads.var(dim=0)
+        grads_var[torch.isnan(grads_var)] = 1e-17
+        lam = (gamma * grads_var).pow(-1)
+        mask = torch.tanh(k * lam * (torch.abs(grad_signs.mean(dim=0)) - tau))
+        mask = torch.max(mask, torch.zeros_like(mask))
+        mask[torch.isnan(mask)] = 1e-17
+        mask_t = (mask.sum() / mask.numel())
+        param.grad = mask * avg_grad
+        param.grad *= (1. / (1e-10 + mask_t))
+
 def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, criterion_tuple, optimizer, epoch, args):
     criterion_ERM, criterion_cont, criterion_inv = criterion_tuple
     batch_time = AverageMeter('Time', ':6.3f')
@@ -694,12 +729,15 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                     env_pen.append(torch.std(torch.stack(temp_pen)) + epsilon) # std of losses of the environments appended to list of losses of all classes
                 elif args.inv == "irmv1":
                     env_pen.append(torch.stack(temp_pen).mean())
+                elif args.inv == "sand":
+                    env_pen.append(_sand_penalty(temp_pen, model)
                 else:
                     raise ValueError(f'invalid inv method {args.inv}')
                 temp_pen = []
-
+            # end for class_idx in range(args.class_num):
+            
             # Invariance Term: mean of variances of contrastive losses of class-environments
-            if epoch >= args.inv_start:
+            if epoch >= args.inv_start and args.inv != "sand":
                 inv_weight = args.inv_weight
                 penalty = sum(env_pen) / len(env_pen) # average loss over classes
                 real_model = model.module if isinstance(model, torch.nn.DataParallel) else model # real_model is a reference, so can update
@@ -710,7 +748,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
             else:
                 loss_inv = torch.Tensor([0.]).cuda()
             # end for class_idx in range(args.class_num):
-        else:
+        else: # args.inv_weight == 0:
             loss_inv = torch.Tensor([0.]).cuda()
 
 
@@ -747,7 +785,11 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
-        loss_all.backward()
+        if args.inv == "sand":
+            # gradient masking applied here
+            _mask_grads(env_pen, model, args.inv_weight)
+        else:
+            loss_all.backward()
         optimizer.step()
 
         # measure elapsed time
