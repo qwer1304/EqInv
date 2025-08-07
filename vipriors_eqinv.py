@@ -94,7 +94,7 @@ parser.add_argument('--pretrain_model', action="store_true", default=False, help
 parser.add_argument('--pretrain_path', type=str, default=None, help='the path of pretrain model')
 
 # invariance
-parser.add_argument('--inv', type=str, default='rex', choices=['rex', 'rvp', 'irmv1'], help='type of invariant loss')
+parser.add_argument('--inv', type=str, default='rex', choices=['rex', 'rvp', 'irmv1', 'sand'], help='type of invariant loss')
 parser.add_argument('--inv_start', type=int, default=0, help='start epoch of inv loss')
 parser.add_argument('--inv_weight', default=1., type=float, help='the weight of invariance')
 parser.add_argument('--inv_ema', default=0., type=float, help='the weight of invariance EMA penalty. 0 - no EMA')
