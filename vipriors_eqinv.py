@@ -534,7 +534,7 @@ def _sand_penalty(env_loss_list, model):
     real_model = model.module if isinstance(model, torch.nn.DataParallel) else model # real_model is a reference, so can update
     params = list(chain(real_model.model.parameters(), real_model.fc.parameters()))
     param_gradients = [[] for _ in params]
-    for env_loss in env_loss_list):
+    for env_loss in env_loss_list:
         env_grads = autograd.grad(env_loss, params, retain_graph=True)
         for grads, env_grad in zip(param_gradients, env_grads):
             grads.append(env_grad)
