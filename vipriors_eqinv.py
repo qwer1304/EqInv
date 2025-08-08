@@ -642,7 +642,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
 
         if epoch >= args.inv_start and (args.inv_weight > 0 or args.inv == "sand"):
             # compute envs for different classes
-            env_nll, env_pen, temp_pen, ib_pen = [], [], [], []
+            env_nll, env_pen, temp_pen, env_pen_ib, temp_pen_ib = [], [], [], [], []
             for class_idx in range(args.class_num):
 
                 mask_pos = target==class_idx # choose the specifc positive samples
