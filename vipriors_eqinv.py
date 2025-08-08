@@ -750,7 +750,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                 else:
                     raise ValueError(f'invalid inv method {args.inv}')
                 if args.ib:
-                    env_pen_ib.append(torch.stack(temp_pen_ib).mean()
+                    env_pen_ib.append(torch.stack(temp_pen_ib).mean())
                 temp_pen = []
                 temp_pen_ib = []
             # end for class_idx in range(args.class_num):
