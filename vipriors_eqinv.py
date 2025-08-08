@@ -326,6 +326,7 @@ def main():
     # optionally resume from a checkpoint
     best_acc1 = 0
     best_epoch = 0
+    resumed = False
     if args.resume:
         if os.path.isfile(args.resume):
             print("=> loading checkpoint '{}'".format(args.resume))
@@ -337,6 +338,7 @@ def main():
             optimizer.load_state_dict(checkpoint['optimizer'])
             print("=> loaded checkpoint '{}' (epoch {})"
                   .format(args.resume, checkpoint['epoch']))
+            resumed = True
         else:
             print("=> no checkpoint found at '{}'".format(args.resume))
 
@@ -429,7 +431,7 @@ def main():
         if files_sorted:
             fp_exist = files_sorted[0]
         
-        if args.resume:
+        if args.resume and resumed:
             hash_object = hashlib.sha256(args.resume.encode())
             hex_dig = hash_object.hexdigest()
             suffix = hex_dig + '_resumed'
