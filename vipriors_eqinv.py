@@ -98,6 +98,8 @@ parser.add_argument('--inv', type=str, default='rex', choices=['rex', 'rvp', 'ir
 parser.add_argument('--inv_start', type=int, default=0, help='start epoch of inv loss')
 parser.add_argument('--inv_weight', default=1., type=float, help='the weight of invariance')
 parser.add_argument('--inv_ema', default=0., type=float, help='the weight of invariance EMA penalty. 0 - no EMA')
+parser.add_argument('--ib', action="store_true", help='apply IB')
+parser.add_argument('--ib_weight', default=1., type=float, help='the weight of IB')
 parser.add_argument('--mlp', action="store_true", default=False, help='use mlp before the loss and feature?')
 parser.add_argument('--backbone_propagate', action="store_true", default=False, help='whether to propagate inv loss to backbone')
 parser.add_argument('--nonancenvirm', action="store_true", default=False, help='use non-anchor environment IRM for penalty')
@@ -617,9 +619,14 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
 
         # compute output
         # def forward(self, image, return_feature=False, return_masked_feature=False)
+        #   feature = model(image)
+        #   masked_feature_erm = mask * feature   
+        #   masked_feature_inv = mask * feature and is detached from backbone, unless propagate_backbone flag is ON
         # output = self.fc(masked_feature_erm)
-        # return self.mlp(masked_feature_erm), masked_feature_inv, output
-        # masked_feature_inv is detached from backbone (unless backbone_propagate flag is ON)
+        # if mlp:
+        #   return self.mlp(masked_feature_erm), masked_feature_inv, output
+        # else:
+        #   return masked_feature_erm, masked_feature_inv, output
         masked_feature1, masked_feature_inv1, output1 = model(images1, return_masked_feature=True)
         masked_feature2, masked_feature_inv2, output2 = model(images2, return_masked_feature=True)
         if args.random_aug:
@@ -635,7 +642,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
 
         if epoch >= args.inv_start and (args.inv_weight > 0 or args.inv == "sand"):
             # compute envs for different classes
-            env_nll, env_pen, temp_pen = [], [], []
+            env_nll, env_pen, temp_pen, ib_pen = [], [], [], []
             for class_idx in range(args.class_num):
 
                 mask_pos = target==class_idx # choose the specifc positive samples
@@ -722,6 +729,8 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                         temp_pen.append(_irm_penalty(output_env, target_num_env))
                     else:
                         temp_pen.append(env_nll[-1]) # loss of this environment appended to list
+                    if args.ib:
+                        temp_pen_ib.append(torch.var(masked_feature_env_norm, dim=0).mean())
                 # end for env_idx in range(len(env_ref_set_class))
                 
                 if args.inv == 'rex':
@@ -740,18 +749,29 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                             agg_grads.extend(new_grads)                   
                 else:
                     raise ValueError(f'invalid inv method {args.inv}')
+                if args.ib:
+                    env_pen_ib.append(torch.stack(temp_pen_ib).mean()
                 temp_pen = []
+                temp_pen_ib = []
             # end for class_idx in range(args.class_num):
             
             # Invariance Term: mean of variances of contrastive losses of class-environments
             if epoch >= args.inv_start and args.inv != "sand":
                 inv_weight = args.inv_weight
                 penalty = sum(env_pen) / len(env_pen) # average loss over classes
+                ib_weight = args.ib_weight if args.ib else 0
+                penalty_ib = sum(env_pen_ib) if args.ib else torch.Tensor([0.]).cuda()
                 real_model = model.module if isinstance(model, torch.nn.DataParallel) else model # real_model is a reference, so can update
                 inv_running_penalty = real_model.inv_running_penalty.to(penalty.device).detach()
                 inv_running_penalty = args.inv_ema * inv_running_penalty + (1 - args.inv_ema) * penalty
                 real_model.inv_running_penalty = inv_running_penalty
+                if args.ib:
+                    ib_running_penalty = real_model.ib_running_penalty.to(penalty_ib.device).detach()
+                    ib_running_penalty = args.inv_ema * ib_running_penalty + (1 - args.inv_ema) * penalty_ib
+                    real_model.ib_running_penalty = ib_running_penalty
                 loss_inv = inv_weight * inv_running_penalty
+                if args.ib:
+                    loss_inv = loss_inv + ib_weight * ib_running_penalty
             else:
                 loss_inv = torch.Tensor([0.]).cuda()
             # end for class_idx in range(args.class_num):
@@ -863,9 +883,14 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
 
         # compute output
         # def forward(self, image, return_feature=False, return_masked_feature=False)
+        #   feature = model(image)
+        #   masked_feature_erm = mask * feature   
+        #   masked_feature_inv = mask * feature and is detached from backbone, unless propagate_backbone flag is ON
         # output = self.fc(masked_feature_erm)
-        # return self.mlp(masked_feature_erm), masked_feature_inv, output
-        # masked_feature_inv is detached from backbone
+        # if mlp:
+        #   return self.mlp(masked_feature_erm), masked_feature_inv, output
+        # else:
+        #   return masked_feature_erm, masked_feature_inv, output
         masked_feature1, masked_feature_inv1, output1 = model(images1, return_masked_feature=True)
         masked_feature2, masked_feature_inv2, output2 = model(images2, return_masked_feature=True)
         if args.random_aug:
