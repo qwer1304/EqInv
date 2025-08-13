@@ -79,6 +79,7 @@ parser.add_argument('--pretrain_path', type=str, default=None, help='the path of
 
 # image
 parser.add_argument('--image_size', type=int, default=224, help='image size')
+parser.add_argument('--image_class', choices=['ImageNet', 'STL', 'CIFAR'], default='ImageNet', help='Image class, default=ImageNet')
 
 # color in label
 parser.add_argument('--target_transform', type=str, default=None, help='a function definition to apply to target')
@@ -118,25 +119,41 @@ class Model_Imagenet(nn.Module):
 
 
 class Net(nn.Module):
-    def __init__(self, num_class, pretrained_path):
+    def __init__(self, feature_dim=128, image_class='ImageNet'):
         super(Net, self).__init__()
         # encoder
-        model = Model_Imagenet()
-        if os.path.isfile(pretrained_path):
-            print("=> loading checkpoint '{}'".format(pretrained_path))
-            checkpoint = torch.load(pretrained_path, map_location="cpu")
-            _, ext = os.path.splitext(pretrained_path)
-            if ext == '.tar':
+        model = Model_Imagenet(image_class=image_class)
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        msg = []
+        if pretrained_path is not None and os.path.isfile(pretrained_path):
+            print("=> loading pretrained checkpoint '{}'".format(pretrained_path))
+            checkpoint = torch.load(pretrained_path, map_location=device)
+            if 'state_dict' in checkpoint.keys():
                 state_dict = checkpoint['state_dict']
             else:
                 state_dict = checkpoint
+            new_state_dict = OrderedDict()
+            for k, v in state_dict.items():
+                # Remove "module.model." prefix
+                name = k.replace("module.model.", "")
+                name = name.replace("module.", "")                  
+                new_state_dict[name] = v
+            state_dict = new_state_dict
             msg = model.load_state_dict(state_dict, strict=False)
             print(msg)
         else:
-            print("=> no checkpoint found at '{}'".format(pretrained_path))
+            print("=> no pretrained checkpoint found at '{}'".format(pretrained_path))
         self.f = model.f
         # classifier
         self.fc = nn.Linear(2048, num_class, bias=True)
+        if msg and msg.unexpected_keys:
+            # Create your fc layer if not yet created
+            if state_dict['fc.weight'].shape == self.fc.weight.shape and \
+               state_dict['fc.bias'].shape == self.fc.bias.shape:
+                # Copy weights
+                self.fc.weight.data.copy_(state_dict['fc.weight'])
+                self.fc.bias.data.copy_(state_dict['fc.bias'])
+                print('Recovering fc layer from checkpoint')
 
     def forward(self, x):
         x = self.f(x)
@@ -154,7 +171,7 @@ def main():
 
 
     #################### Model ######################
-    model_base = Net(num_class=args.class_num, pretrained_path=args.pretrain_path)
+    model_base = Net(num_class=args.class_num, pretrained_path=args.pretrain_path, image_class=args.image_class)
     import copy
     ft_fc = copy.deepcopy(model_base.fc)
     model_base.fc = nn.Identity()
