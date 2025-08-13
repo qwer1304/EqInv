@@ -21,6 +21,7 @@ import torchvision.models as models
 from collections import defaultdict, OrderedDict
 #from randaugment import RandAugment
 
+import cv2
 import numpy as np
 
 import utils
