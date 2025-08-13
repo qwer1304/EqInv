@@ -169,6 +169,28 @@ class Net(nn.Module):
         out = self.fc(feature)
         return out
 
+class GaussianBlur(object):
+    # Implements Gaussian blur as described in the SimCLR paper
+    def __init__(self, kernel_size, mmin=0.1, mmax=2.0):
+        self.min = mmin
+        self.max = mmax
+        # Ensure kernel size is odd and >= 1
+        if kernel_size % 2 == 0:
+            kernel_size += 1
+        self.kernel_size = max(1, kernel_size)
+    
+    def __call__(self, sample):
+        sample = np.array(sample)
+
+        # blur the image with a 50% chance
+        prob = np.random.random_sample()
+
+        if prob < 0.5:
+            sigma = (self.max - self.min) * np.random.random_sample() + self.min
+            sample = cv2.GaussianBlur(sample, (self.kernel_size, self.kernel_size), sigma)
+
+        return sample
+
 def make_train_transform(image_size=32):
     return transforms.Compose([
         transforms.RandomResizedCrop(image_size),
