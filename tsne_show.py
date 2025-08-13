@@ -98,6 +98,9 @@ def main(args):
     #coloffset = 0
 
     i = 0
+    cmap = plt.cm.tab10
+    n_cols = 10
+    coloffset = 0
     lls = labels
     target = "class"
     print('Plotting classes @ Val ... ', end="")
@@ -204,10 +207,13 @@ def main(args):
     
     print('Done!')
   
-    axs[i].legend(handles=handles, loc='lower left', ncol=len(u_lls))
+    axs[i].legend(handles=handles, loc='upper right', ncol=len(u_lls))
     axs[i].set_title(f"{args.method} domained by {target} @ val")
 
     i += 1
+    cmap = plt.cm.tab10
+    n_cols = 10
+    coloffset = 0
     lls = labels
     target = "class"
     print('Plotting classes @ Test ... ', end="")
@@ -314,13 +320,15 @@ def main(args):
     
     print('Done!')
   
-    axs[i].legend(handles=handles, loc='lower left', ncol=len(u_lls))
+    axs[i].legend(handles=handles, loc='upper right', ncol=len(u_lls))
     axs[i].set_title(f"{args.method} domained by {target} @ test")
 
     i += 1
+    cmap = plt.cm.tab10
+    n_cols = 10
+    coloffset = 8
     lls = domains
     target = "domain"
-    coloffset = 8
     print('Plotting domains ... ', end="")
     
     u_lls = np.unique(lls)
@@ -343,62 +351,75 @@ def main(args):
     axs[i].set_title(f"{args.method} domained by {target}")
     
     i += 1
-    lls = labels_raw // n_classes
-    target = "colors"
+    cmap = plt.cm.tab20
+    n_cols = 20
+    coloffset = 7
+    lls = labels_raw #// n_classes
+    target = "lab+col"
     val_samples = domains==0
-    coloffset = 3
+    zorder = [0,2,3,1]
+    labs = ['0/R', '1/R', '0/G', '1/G']
     print('Plotting colors @ Val ...', end="")
     
     u_lls = np.unique(lls)
     
     handles = []
-
+    
     for j, l in enumerate(u_lls):
         fidx = (lls == l) & val_samples
         domain_feat = cmap(abs(coloffset - l) % n_cols)
         # Features scatter
-        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.2, s=4+4*j, marker=".", color=domain_feat, zorder=len(u_lls)-j)
+        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.7, s=4+4*j, marker="o", color=domain_feat, zorder=zorder[j], #len(u_lls)-j,
+                                edgecolors='white', linewidth=0.1)
+        #axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.5, s=4, marker=".", color=domain_feat, zorder=len(u_lls)-j, edgecolors='white', linewidth=0.1)
         # Create proxy handles for legend
         feature_proxy = mlines.Line2D([], [], color=domain_feat, marker="o", linestyle="None",
-                                      markersize=6, label=f"{target}: {'Green' if l==1 else 'Red'}")
+                                      markersize=6, label=f"{target}: {labs[l]}")
         handles.append(feature_proxy)
    
     print('Done')
 
-    axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls))
+    axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls) // n_classes)
     axs[i].set_title(f"{args.method} domained by {target} @ Val")
 
     i += 1
-    lls = labels_raw // n_classes
-    target = "colors"
+    cmap = plt.cm.tab20
+    n_cols = 20
+    coloffset = 7
+    lls = labels_raw #// n_classes
+    target = "lab+col"
     test_samples = domains==1
-    coloffset = 3
+    labs = ['0/R', '1/R', '0/G', '1/G']
+    zorder = [3,0,1,2]
     print('Plotting colors @ Test ... ', end="")
     
     u_lls = np.unique(lls)
     
     handles = []
-
+    
     for j, l in enumerate(u_lls):
         fidx = (lls == l) & test_samples
         domain_feat = cmap(abs(coloffset - l) % n_cols)
         # Features scatter
-        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.2, s=4+4*j, marker=".", color=domain_feat, zorder=len(u_lls)-j)
+        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.7, s=4+4*j, marker="o", color=domain_feat, zorder=zorder[j], #len(u_lls)-j,
+                                edgecolors='white', linewidth=0.1)
         # Create proxy handles for legend
         feature_proxy = mlines.Line2D([], [], color=domain_feat, marker="o", linestyle="None",
-                                      markersize=6, label=f"{target}: {'Green' if l==1 else 'Red'}")
+                                      markersize=6, label=f"{target}: {labs[l]}")
         handles.append(feature_proxy)
    
     print('Done')
 
-    axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls))
+    axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls) // n_classes)
     axs[i].set_title(f"{args.method} domained by {target} @ Test")
 
     i += 1
+    cmap = plt.cm.tab10
+    n_cols = 10
+    coloffset = 2
     lls = predicts != labels
     test_samples = domains == 1
     target = "predicts"
-    coloffset = 2
     print('Plotting predicts ... ', end="")
     
     u_lls = np.unique(lls)

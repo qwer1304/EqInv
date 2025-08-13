@@ -623,12 +623,14 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
         # def forward(self, image, return_feature=False, return_masked_feature=False)
         #   feature = model(image)
         #   masked_feature_erm = mask * feature   
-        #   masked_feature_inv = mask * feature and is detached from backbone, unless propagate_backbone flag is ON
+        #   masked_feature_inv = mask * (feature.detach() if backbone_detached else feauture)
         # output = self.fc(masked_feature_erm)
         # if mlp:
         #   return self.mlp(masked_feature_erm), masked_feature_inv, output
         # else:
         #   return masked_feature_erm, masked_feature_inv, output
+        # masked_feature_for_globalcont = mlp(masked_feature_erm)
+        # masked_feature = masked_feature_inv
         masked_feature1, masked_feature_inv1, output1 = model(images1, return_masked_feature=True)
         masked_feature2, masked_feature_inv2, output2 = model(images2, return_masked_feature=True)
         if args.random_aug:
