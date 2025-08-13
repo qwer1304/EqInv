@@ -388,7 +388,7 @@ def main():
     if args.random_aug:
         train_transform_hard = make_train_transform(image_size, args, hard=True)
 
-    train_transform = make_train_transform(image_size, args, hard=False)
+    train_transform = make_train_transform(args.image_size, args, hard=False)
 
     val_transform = make_test_transform()
 
