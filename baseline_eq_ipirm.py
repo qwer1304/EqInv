@@ -119,7 +119,7 @@ class Model_Imagenet(nn.Module):
 
 
 class Net(nn.Module):
-    def __init__(self, feature_dim=128, image_class='ImageNet'):
+    def __init__(self, num_class, pretrained_path, image_class='ImageNet'):
         super(Net, self).__init__()
         # encoder
         model = Model_Imagenet(image_class=image_class)
