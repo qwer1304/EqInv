@@ -146,7 +146,11 @@ class ResNet_ft_eqinv(nn.Module):
         if self.mask_layer is not None:
             device = feature.device
             activation = self.activation_map.apply(self.mask_layer).to(device)
-            masked_feature_erm = F.normalize(activation * feature, dim=-1) * self.scaler # nomalize for numeral stability
+            if self.args.freeze_feat:
+                masked_feature_erm = F.normalize(activation * feature.detach(), dim=-1) * self.scaler # nomalize for numeral stability
+            else:                
+                masked_feature_erm = F.normalize(activation * feature, dim=-1) * self.scaler # nomalize for numeral stability
+                
             if self.args.backbone_propagate:
                 masked_feature_inv = F.normalize(activation * feature, dim=-1) * self.scaler 
             else:

@@ -137,6 +137,9 @@ parser.add_argument('--drop_samples_to_balance_classes', action="store_true", de
 # loss
 parser.add_argument('--label_smoothing', type=float, default=0.1, help='label smoothing')
 
+parser.add_argument('--freeze_feat', action="store_true", default=False, help='freeze featurizer')
+parser.add_argument('--norandgray', action="store_true", default=False, help='skip rand gray transform')
+
 args = parser.parse_args()
 
 assert not (args.inv_weight_to_balance_classes and args.drop_samples_to_balance_classes), "Don't use both class balancing methods together"
@@ -287,7 +290,43 @@ class Net(nn.Module):
         out = self.fc(feature)
         return out
 
+class GaussianBlur(object):
+    # Implements Gaussian blur as described in the SimCLR paper
+    def __init__(self, kernel_size, mmin=0.1, mmax=2.0):
+        self.min = mmin
+        self.max = mmax
+        # Ensure kernel size is odd and >= 1
+        if kernel_size % 2 == 0:
+            kernel_size += 1
+        self.kernel_size = max(1, kernel_size)
+    
+    def __call__(self, sample):
+        sample = np.array(sample)
 
+        # blur the image with a 50% chance
+        prob = np.random.random_sample()
+
+        if prob < 0.5:
+            sigma = (self.max - self.min) * np.random.random_sample() + self.min
+            sample = cv2.GaussianBlur(sample, (self.kernel_size, self.kernel_size), sigma)
+
+        return sample
+
+def make_train_transform(image_size, args, hard=False):
+    return transforms.Compose([
+        transforms.RandomResizedCrop(image_size),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandAugment() if hard else transforms.Lambda(lambda x: x),
+        transforms.RandomApply([transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8),
+        transforms.RandomGrayscale(p=0.2) if args.norandgray else transforms.Lambda(lambda x: x),
+        GaussianBlur(kernel_size=int(0.1 * image_size)),
+        transforms.ToTensor(),
+        transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])])
+
+def make_test_transform():
+    return transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])])
 
 def main():
     if not os.path.exists('{}/{}'.format(args.save_root, args.name)):
@@ -346,29 +385,12 @@ def main():
 
 
     ### prepare few shot dataset
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
-
     if args.random_aug:
-        train_transform_hard = transforms.Compose([
-            transforms.RandomResizedCrop(args.image_size),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandAugment(),
-            transforms.ToTensor(),
-            normalize, ])
+        train_transform_hard = make_train_transform(image_size, args, hard=True)
 
-    train_transform = transforms.Compose([
-        transforms.RandomResizedCrop(args.image_size),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        normalize, ])
+    train_transform = make_train_transform(image_size, args, hard=False)
 
-
-    val_transform = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(args.image_size),
-        transforms.ToTensor(),
-        normalize, ])
+    val_transform = make_test_transform()
 
     target_transform = eval(args.target_transform) if args.target_transform is not None else None
     

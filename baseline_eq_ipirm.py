@@ -195,7 +195,7 @@ class GaussianBlur(object):
 
         return sample
 
-def make_train_transform(image_size=32):
+def make_train_transform(image_size, args):
     return transforms.Compose([
         transforms.RandomResizedCrop(image_size),
         transforms.RandomHorizontalFlip(p=0.5),
@@ -287,7 +287,7 @@ def main():
             transforms.ToTensor(),
             normalize,])
     """
-    train_tranform = make_train_transform(args.image_size)
+    train_tranform = make_train_transform(args.image_size, args)
     val_transform = make_test_transform()
 
     target_transform = eval(args.target_transform) if args.target_transform is not None else None
