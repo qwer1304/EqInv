@@ -91,6 +91,8 @@ parser.add_argument('--spaces', type=int, default=4, help='spaces between entrie
 parser.add_argument('--val_shuffle', action="store_true", default=False, help='shuffle validation daatase')
 parser.add_argument('--test_shuffle', action="store_true", default=False, help='shuffle test daatase')
 
+parser.add_argument('--freeze_feat', action="store_true", default=False, help='freeze featurizer')
+
 args = parser.parse_args()
 
 best_acc1 = 0
@@ -121,7 +123,8 @@ class Model_Imagenet(nn.Module):
         x = self.f(x)
         feature = torch.flatten(x, start_dim=1)
         out = self.g(feature)
-        return F.normalize(feature, dim=-1), F.normalize(out, dim=-1)
+        #return F.normalize(feature, dim=-1), F.normalize(out, dim=-1)
+        return feature, dim=-1), F.normalize(out, dim=-1)
 
 
 class Net(nn.Module):
@@ -189,11 +192,16 @@ def main():
     init_lr = args.lr * args.batch_size / 256
     print('lr scale to %.2f' %(init_lr))
     criterion = nn.CrossEntropyLoss().cuda()
+    if args.freeze_feat:
+        real_model = model.module if isinstance(model, torch.nn.DataParallel) else model
+        pars = real_model.fc.parameters()
+    else:
+        pars = model.parameters()
     if args.adam:
         init_lr = 1e-3
-        optimizer = torch.optim.Adam(model.parameters(), lr=init_lr, weight_decay=0.)
+        optimizer = torch.optim.Adam(pars, lr=init_lr, weight_decay=0.)
     else:
-        optimizer = torch.optim.SGD(model.parameters(), init_lr,
+        optimizer = torch.optim.SGD(pars, init_lr,
                                     momentum=args.momentum,
                                     weight_decay=args.weight_decay)
 
