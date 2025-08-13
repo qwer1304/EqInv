@@ -21,6 +21,8 @@ import torchvision.models as models
 from collections import defaultdict, OrderedDict
 #from randaugment import RandAugment
 
+import numpy as np
+
 import utils
 
 from torchvision.models.resnet import resnet50
