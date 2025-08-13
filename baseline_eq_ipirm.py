@@ -98,7 +98,6 @@ best_acc1 = 0
 
 
 class Model_Imagenet(nn.Module):
-class Model_Imagenet(nn.Module):
     def __init__(self, feature_dim=128, image_class='ImageNet'):
         super(Model_Imagenet, self).__init__()
 
