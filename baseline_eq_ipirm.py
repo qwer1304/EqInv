@@ -169,6 +169,20 @@ class Net(nn.Module):
         out = self.fc(feature)
         return out
 
+def make_train_transform(image_size=32):
+    return transforms.Compose([
+        transforms.RandomResizedCrop(image_size),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomApply([transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8),
+        transforms.RandomGrayscale(p=0.2),
+        GaussianBlur(kernel_size=int(0.1 * image_size)),
+        transforms.ToTensor(),
+        transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])])
+
+def make_test_transform():
+    return transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])])
 
 
 def main():
@@ -189,7 +203,7 @@ def main():
 
     ######## define loss function (criterion) and optimizer
     init_lr = args.lr * args.batch_size / 256
-    print('lr scale to %.2f' %(init_lr))
+    print('lr scale to %.4f' %(init_lr))
     criterion = nn.CrossEntropyLoss().cuda()
     if args.freeze_feat:
         real_model = model.module if isinstance(model, torch.nn.DataParallel) else model
@@ -223,6 +237,7 @@ def main():
 
 
     ### prepare few shot dataset
+    """
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
     if args.random_aug:
@@ -245,6 +260,9 @@ def main():
             transforms.CenterCrop(args.image_size),
             transforms.ToTensor(),
             normalize,])
+    """
+    train_tranform = make_train_transform(args.image_size)
+    val_transform = make_test_transform()
 
     target_transform = eval(args.target_transform) if args.target_transform is not None else None
 
