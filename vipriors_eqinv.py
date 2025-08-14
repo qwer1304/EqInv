@@ -372,12 +372,19 @@ def main():
     if args.resume:
         if os.path.isfile(args.resume):
             print("=> loading checkpoint '{}'".format(args.resume))
-            checkpoint = torch.load(args.resume)
+            checkpoint = torch.load(args.resume, weights_only=False)
             args.start_epoch = checkpoint['epoch']
             best_acc1 = checkpoint['best_acc1']
             best_epoch = checkpoint['best_epoch']
             model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
+            # Restore RNG states
+            rng_dict = checkpoint['rng_dict']
+            torch.set_rng_state(rng_dict['rng_state'].cpu())
+            if torch.cuda.is_available():
+                torch.cuda.set_rng_state_all([t.cpu() for t in rng_dict['cuda_rng_state']])
+            np.random.set_state(rng_dict['numpy_rng_state'])
+            random.setstate(rng_dict['python_rng_state'])
             print("=> loaded checkpoint '{}' (epoch {})"
                   .format(args.resume, checkpoint['epoch']))
             resumed = True
@@ -535,6 +542,8 @@ def main():
             best_acc1 = acc1
             best_epoch = epoch + 1
             
+        cuda_rng_state = torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None
+
         save_checkpoint({
             'epoch':        epoch + 1,
             'arch':         args.arch,
@@ -542,6 +551,12 @@ def main():
             'best_acc1':    best_acc1,
             'best_epoch':   best_epoch,
             'optimizer':    optimizer.state_dict(),
+            "rng_dict": {
+                "rng_state": torch.get_rng_state(),
+                "cuda_rng_state": cuda_rng_state,
+                "numpy_rng_state": np.random.get_state(),
+                "python_rng_state": random.getstate(),
+            },
         }, is_best, args, filename='{}/{}/checkpoint.pth.tar'.format(args.save_root, args.name))
 
     if args.opt_mask:

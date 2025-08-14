@@ -326,7 +326,7 @@ def main(args):
     i += 1
     cmap = plt.cm.tab10
     n_cols = 10
-    coloffset = 8
+    coloffset = 2 #8
     lls = domains
     target = "domain"
     print('Plotting domains ... ', end="")
@@ -339,7 +339,7 @@ def main(args):
         fidx = (lls == l)
         domain_feat = cmap((j + coloffset) % n_cols)
         # Features scatter
-        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.2, s=4+4*j, marker=".", color=domain_feat, zorder=len(u_lls)-j)
+        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.2, s=4+4*j, marker="o", color=domain_feat, zorder=len(u_lls)-j)
         # Create proxy handles for legend
         feature_proxy = mlines.Line2D([], [], color=domain_feat, marker="o", linestyle="None",
                                       markersize=6, label=f"{target}: {'Test' if l else 'Val'}")
