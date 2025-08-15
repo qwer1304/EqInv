@@ -6,6 +6,8 @@ import numpy as np
 import os
 from tqdm.auto import tqdm
 from scipy.interpolate import griddata
+from sklearn.neighbors import KNeighborsClassifier
+
 
 def main(args):
     dir = args.data_dir
@@ -88,7 +90,7 @@ def main(args):
         n_classes = weights_2d.shape[0]
         print('Done!')
 
-    fig, axs = plt.subplots(2, 3, figsize=(3*6, 2*5))  # 2 row, 3 columns
+    fig, axs = plt.subplots(3, 3, figsize=(3*8, 3*5))  # 3 row, 3 columns
     axs = axs.flatten()
     cmap = plt.cm.tab10
     n_cols = 10
@@ -441,10 +443,72 @@ def main(args):
     axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls))
     axs[i].set_title(f"{args.method} domained by {target} @ test")
 
-    fig.suptitle(f"model: {args.model}")
+    y = labels
+    X_Train_embedded = features_2d
+    y_predicted = predicts
 
-    plt.savefig(os.path.join(dir, f"{args.method}_{args.model}.jpg"), format='jpg')
-    os.startfile(os.path.abspath(os.path.join(dir, f"{args.method}_{args.model}.jpg")))
+    # create meshgrid
+    resolution = 100 # 100x100 background pixels
+    X2d_xmin, X2d_xmax = np.min(X_Train_embedded[:,0]), np.max(X_Train_embedded[:,0])
+    X2d_ymin, X2d_ymax = np.min(X_Train_embedded[:,1]), np.max(X_Train_embedded[:,1])
+    xx, yy = np.meshgrid(np.linspace(X2d_xmin, X2d_xmax, resolution), np.linspace(X2d_ymin, X2d_ymax, resolution))
+
+    # approximate Voronoi tesselation on resolution x resolution grid using 1-NN
+    background_model = KNeighborsClassifier(n_neighbors=1).fit(X_Train_embedded[domains==0], y_predicted[domains==0]) 
+    voronoiBackground = background_model.predict(np.c_[xx.ravel(), yy.ravel()])
+    voronoiBackground = voronoiBackground.reshape((resolution, resolution))
+
+    #plot
+    cmap = plt.cm.tab20c
+    n_cols = 20
+    coloffset = 0
+    u_y = np.unique(y)
+
+    i += 1
+    cols_dec = cmap((coloffset + 4*u_y) % n_cols)
+    axs[i].contourf(xx, yy, voronoiBackground, colors=cols_dec, zorder=0, levels=len(u_y)+1)
+    mask = domains==0
+    cols_dom = cmap((coloffset + 4*y[mask]+1) % n_cols)
+    axs[i].scatter(X_Train_embedded[mask,0], X_Train_embedded[mask,1], color=cols_dom, marker='o', 
+        zorder=1, s=8) #, edgecolors='white', linewidth=0.1, alpha=0.7)
+    handles = []
+    cols_dom = cmap((coloffset + 4*u_y+1) % n_cols)
+    for j in u_y:
+        feature_proxy = mlines.Line2D([], [], color=cols_dom[j], marker="o", linestyle="None",
+                                      markersize=6, label=f"{j}")
+        handles.append(feature_proxy)
+
+    axs[i].legend(handles=handles, loc='upper center', ncol=len(u_y))
+    axs[i].set_title("Decision areas & Labels @ Val")
+
+    i += 1
+    axs[i].contourf(xx, yy, voronoiBackground, colors=cols_dec, zorder=0, levels=len(u_y)+1)
+    mask = domains==1
+    cols_dom = cmap((coloffset + 4*y[mask]+1) % n_cols)
+    axs[i].scatter(X_Train_embedded[mask,0], X_Train_embedded[mask,1], color=cols_dom, marker='o', 
+        zorder=1, s=8) #, edgecolors='white', linewidth=0.1, alpha=0.7)
+    handles = []
+    cols_dom = cmap((coloffset + 4*u_y+1) % n_cols)
+    for j in u_y:
+        feature_proxy = mlines.Line2D([], [], color=cols_dom[j], marker="o", linestyle="None",
+                                      markersize=6, label=f"{j}")
+        handles.append(feature_proxy)
+
+    axs[i].legend(handles=handles, loc='upper center', ncol=len(u_y))
+    axs[i].set_title("Decision areas & Labels @ Test")
+    
+    fig.suptitle(f"model: {args.model}", y=0.92)
+
+    fmt = "jpg"
+    fn = f"{args.method}_{args.model}.{fmt}"
+    fp = os.path.join(dir, fn)
+    afp = os.path.abspath(fp)
+    print(f"Saving figure in {afp} ...", end="")
+    plt.savefig(fp, format=fmt)
+    print("Done")
+    os.startfile(afp)
+    
+        
     
 if __name__ == "__main__":
     # create the top-level parser

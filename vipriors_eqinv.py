@@ -321,7 +321,7 @@ def make_train_transform(image_size, args, hard=False):
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.RandAugment() if hard else transforms.Lambda(lambda x: x),
         transforms.RandomApply([transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8),
-        transforms.RandomGrayscale(p=0.2) if args.norandgray else transforms.Lambda(lambda x: x),
+        transforms.RandomGrayscale(p=0.2) if not args.norandgray else transforms.Lambda(lambda x: x),
         GaussianBlur(kernel_size=int(0.1 * image_size)),
         transforms.ToTensor(),
         transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])])
