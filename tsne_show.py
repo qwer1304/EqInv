@@ -29,13 +29,25 @@ def main(args):
         # Load
         for i, fp in tqdm(enumerate(filepaths), leave=False, total=len(filepaths)):
             data = torch.load(fp, map_location=torch.device('cpu'))
-            features.append(data['features'].numpy())  # convert to numpy
-            targets = data['labels'].numpy()
-            labels.append(targets)
-            targets_raw = data['labels_raw'].numpy()
-            labels_raw.append(targets_raw)
-            domains.append(i*np.ones_like(targets))
-            logits.append(data['logits'].numpy())
+            if args.variant == 'EqInv':
+                features.append(data['features'].numpy())  # convert to numpy
+                targets = data['labels'].numpy()
+                labels.append(targets)
+                targets_raw = data['labels_raw'].numpy()
+                labels_raw.append(targets_raw)
+                domains.append(i*np.ones_like(targets))
+                logits.append(data['logits'].numpy())
+            elif args.variant == 'IP-IRM':
+                features.append(data['features'].numpy())  # convert to numpy
+                targets = data['labels'].numpy()
+                labels.append(targets)
+                targets_raw = data['labels_raw'].numpy()
+                labels_raw.append(targets_raw)
+                domains.append(i*np.ones_like(targets))
+                logits.append(data['pred_scores'].numpy())
+            else:
+                raise ValueError(f"Unknown variant {args.variant}")
+
         features    = np.concatenate(features, axis=0)
         labels      = np.concatenate(labels, axis=0)
         labels_raw  = np.concatenate(labels_raw, axis=0)
@@ -44,10 +56,20 @@ def main(args):
         predicts    = np.argmax(logits, axis=1)
         
         # model parameters
-        weights   = data['head_weights'].detach().numpy() # (num_classes, embed_dim)
-        biases    = data['head_bias'].detach().numpy()    # (num_classes,)
-        n_classes = data['n_classes']                     # int
+        if args.variant == 'EqInv':
+            weights   = data['head_weights'].detach().numpy() # (num_classes, embed_dim)
+            biases    = data['head_bias'].detach().numpy()    # (num_classes,)
+            n_classes = data['n_classes']                     # int
+        elif args.variant == 'IP-IRM':
+            n_classes = data['n_classes']                     # int
+            weights   = np.vstack((np.zeros(features.shape[1]),   # dummy
+                                   np.ones(features.shape[1])))   # (num_classes, embed_dim)
+            biases    = np.zeros(n_classes)                 # dummy (num_classes,)
+        else:
+            raise ValueError(f"Unknown variant {args.variant}")
         
+        assert(features.shape[1] == weights.shape[1])
+        assert(weights.shape[0] == n_classes and biases.shape[0] == n_classes)
         if args.method == 'tsne':
             tsne = TSNE(n_components=2, perplexity=args.perplexity, random_state=0, verbose=2, max_iter=args.max_iter, init='pca')
             features_2d = tsne.fit_transform(np.concatenate([features, weights], axis=0))
@@ -89,19 +111,39 @@ def main(args):
         predicts = np.load(os.path.join(dir,f"predicts_{args.model}.npy"))
         n_classes = weights_2d.shape[0]
         print('Done!')
+   
+    y = labels
+    X_Train_embedded = features_2d
+    y_predicted = predicts
 
-    fig, axs = plt.subplots(3, 3, figsize=(3*8, 3*5))  # 3 row, 3 columns
+    # create meshgrid
+    resolution = 100 # 100x100 background pixels
+    X2d_xmin, X2d_xmax = np.min(X_Train_embedded[:,0]), np.max(X_Train_embedded[:,0])
+    X2d_ymin, X2d_ymax = np.min(X_Train_embedded[:,1]), np.max(X_Train_embedded[:,1])
+    xx, yy = np.meshgrid(np.linspace(X2d_xmin, X2d_xmax, resolution), np.linspace(X2d_ymin, X2d_ymax, resolution))
+
+    # approximate Voronoi tesselation on resolution x resolution grid using 1-NN
+    background_model = KNeighborsClassifier(n_neighbors=1).fit(X_Train_embedded[domains==0], y_predicted[domains==0]) 
+    voronoiBackground = background_model.predict(np.column_stack((xx.ravel(), yy.ravel())))
+    voronoiBackground = voronoiBackground.reshape((resolution, resolution))
+
+    #plot
+    cmap = plt.cm.tab20c
+    n_cols = 20
+    coloffset = 0
+    u_y = np.unique(y)
+    cols_dec = cmap((coloffset + 4*u_y) % n_cols)
+
+    fig, axs = plt.subplots(2, 3, figsize=(2*12, 3*5))  # 2 row, 3 columns
     axs = axs.flatten()
     cmap = plt.cm.tab10
     n_cols = 10
     coloffset = 0
-    #cmap = plt.cm.Set1
-    #n_cols = 9
-    #coloffset = 0
 
     i = 0
-    cmap = plt.cm.tab10
-    n_cols = 10
+    axs[i].contourf(xx, yy, voronoiBackground, colors=cols_dec, zorder=0, levels=len(u_y)+1)
+    cmap = plt.cm.tab20c
+    n_cols = 20
     coloffset = 0
     lls = labels
     target = "class"
@@ -115,16 +157,17 @@ def main(args):
     val_samples = domains==0
     for j, l in enumerate(u_lls):
         fidx = (lls == l) & val_samples
-        domain_feat = cmap((j + coloffset) % n_cols)
-        domain_w = cmap(abs(1 + len(u_lls) - j) % n_cols)    # green, red, ...
+        domain_feat = cmap((coloffset + 4*j+1) % n_cols)
+        domain_w = plt.cm.tab10((2 + j) % n_cols)    # green, red, ...
         marker_w = markers[j % len(markers)]
-        size_w = max(300-j*100,50)
+        size_w = 300 #max(300-j*100,50)
 
         # Features scatter
-        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.2, s=4+4*j, marker=".", color=domain_feat, zorder=len(u_lls)-j)
+        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.7, s=4+4*j, marker="o", color=domain_feat, zorder=len(u_lls)+1-j)
 
         # Weights scatter
-        axs[i].scatter(weights_2d[j, 0], weights_2d[j, 1], alpha=1.0, s=size_w, marker=marker_w, color=domain_w, zorder=len(u_lls)+1)
+        axs[i].scatter(weights_2d[j, 0], weights_2d[j, 1], alpha=1.0, s=size_w, marker=marker_w, color=domain_w, zorder=len(u_lls)+1+1,
+            edgecolors='white', linewidth=0.1)
 
         # Create proxy handles for legend
         feature_proxy = mlines.Line2D([], [], color=domain_feat, marker="o", linestyle="None",
@@ -135,6 +178,7 @@ def main(args):
         handles.append(feature_proxy)
         handles.append(weight_proxy)
 
+    """
     # Fix axis limits after plotting to avoid autoscaling
     original_xlim = axs[i].get_xlim()
     original_ylim = axs[i].get_ylim()
@@ -206,15 +250,17 @@ def main(args):
         axs[i].text(*label_pos, label,
                     fontsize=12, color=color,
                     ha=align, va='center', bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=0.5))
+    """
     
     print('Done!')
   
-    axs[i].legend(handles=handles, loc='upper right', ncol=len(u_lls))
+    axs[i].legend(handles=handles, loc='lower right', ncol=len(u_lls))
     axs[i].set_title(f"{args.method} domained by {target} @ val")
 
     i += 1
-    cmap = plt.cm.tab10
-    n_cols = 10
+    axs[i].contourf(xx, yy, voronoiBackground, colors=cols_dec, zorder=0, levels=len(u_y)+1)
+    cmap = plt.cm.tab20c
+    n_cols = 20
     coloffset = 0
     lls = labels
     target = "class"
@@ -228,16 +274,17 @@ def main(args):
     test_samples = domains==1
     for j, l in enumerate(u_lls):
         fidx = (lls == l) & test_samples
-        domain_feat = cmap((j + coloffset) % n_cols)
-        domain_w = cmap(abs(1 + len(u_lls) - j) % n_cols)    # green, red, ...
+        domain_feat = cmap((coloffset + 4*j+1) % n_cols)
+        domain_w = plt.cm.tab10((2 + j) % n_cols)    # green, red, ...
         marker_w = markers[j % len(markers)]
-        size_w = max(300-j*100,50)
+        size_w = 300 #max(300-j*100,50)
 
         # Features scatter
-        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.2, s=4+4*j, marker=".", color=domain_feat, zorder=len(u_lls)-j)
+        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.7, s=4+4*j, marker="o", color=domain_feat, zorder=len(u_lls)+1-j)
 
         # Weights scatter
-        axs[i].scatter(weights_2d[j, 0], weights_2d[j, 1], alpha=1.0, s=size_w, marker=marker_w, color=domain_w, zorder=len(u_lls)+1)
+        axs[i].scatter(weights_2d[j, 0], weights_2d[j, 1], alpha=1.0, s=size_w, marker=marker_w, color=domain_w, zorder=len(u_lls)+1+1,
+            edgecolors='white', linewidth=0.1)
 
         # Create proxy handles for legend
         feature_proxy = mlines.Line2D([], [], color=domain_feat, marker="o", linestyle="None",
@@ -248,6 +295,7 @@ def main(args):
         handles.append(feature_proxy)
         handles.append(weight_proxy)
 
+    """
     # Fix axis limits after plotting to avoid autoscaling
     original_xlim = axs[i].get_xlim()
     original_ylim = axs[i].get_ylim()
@@ -319,10 +367,11 @@ def main(args):
         axs[i].text(*label_pos, label,
                     fontsize=12, color=color,
                     ha=align, va='center', bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=0.5))
+    """
     
     print('Done!')
   
-    axs[i].legend(handles=handles, loc='upper right', ncol=len(u_lls))
+    axs[i].legend(handles=handles, loc='lower right', ncol=len(u_lls))
     axs[i].set_title(f"{args.method} domained by {target} @ test")
 
     i += 1
@@ -416,6 +465,7 @@ def main(args):
     axs[i].set_title(f"{args.method} domained by {target} @ Test")
 
     i += 1
+    axs[i].contourf(xx, yy, voronoiBackground, colors=cols_dec, zorder=0, levels=len(u_y)+1)
     cmap = plt.cm.tab10
     n_cols = 10
     coloffset = 2
@@ -432,7 +482,7 @@ def main(args):
         fidx = (lls == l) & test_samples
         domain_feat = cmap((coloffset + j) % n_cols)
         # Features scatter
-        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.2, s=4+4*j, marker=".", color=domain_feat, zorder=len(u_lls)-j)
+        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.2, s=4+4*j, marker=".", color=domain_feat, zorder=len(u_lls)+1-j)
         # Create proxy handles for legend
         feature_proxy = mlines.Line2D([], [], color=domain_feat, marker="o", linestyle="None",
                                       markersize=6, label=f"{target}: {'Wrong' if l else 'Correct'}")
@@ -443,30 +493,14 @@ def main(args):
     axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls))
     axs[i].set_title(f"{args.method} domained by {target} @ test")
 
-    y = labels
-    X_Train_embedded = features_2d
-    y_predicted = predicts
-
-    # create meshgrid
-    resolution = 100 # 100x100 background pixels
-    X2d_xmin, X2d_xmax = np.min(X_Train_embedded[:,0]), np.max(X_Train_embedded[:,0])
-    X2d_ymin, X2d_ymax = np.min(X_Train_embedded[:,1]), np.max(X_Train_embedded[:,1])
-    xx, yy = np.meshgrid(np.linspace(X2d_xmin, X2d_xmax, resolution), np.linspace(X2d_ymin, X2d_ymax, resolution))
-
-    # approximate Voronoi tesselation on resolution x resolution grid using 1-NN
-    background_model = KNeighborsClassifier(n_neighbors=1).fit(X_Train_embedded[domains==0], y_predicted[domains==0]) 
-    voronoiBackground = background_model.predict(np.c_[xx.ravel(), yy.ravel()])
-    voronoiBackground = voronoiBackground.reshape((resolution, resolution))
-
-    #plot
+    """
+    i += 1
+    axs[i].contourf(xx, yy, voronoiBackground, colors=cols_dec, zorder=0, levels=len(u_y)+1)
     cmap = plt.cm.tab20c
     n_cols = 20
     coloffset = 0
     u_y = np.unique(y)
 
-    i += 1
-    cols_dec = cmap((coloffset + 4*u_y) % n_cols)
-    axs[i].contourf(xx, yy, voronoiBackground, colors=cols_dec, zorder=0, levels=len(u_y)+1)
     mask = domains==0
     cols_dom = cmap((coloffset + 4*y[mask]+1) % n_cols)
     axs[i].scatter(X_Train_embedded[mask,0], X_Train_embedded[mask,1], color=cols_dom, marker='o', 
@@ -496,8 +530,9 @@ def main(args):
 
     axs[i].legend(handles=handles, loc='upper center', ncol=len(u_y))
     axs[i].set_title("Decision areas & Labels @ Test")
+    """
     
-    fig.suptitle(f"model: {args.model}", y=0.92)
+    fig.suptitle(f"{args.variant} - model: {args.model}", y=0.92)
 
     fmt = "jpg"
     fn = f"{args.method}_{args.model}.{fmt}"
@@ -516,6 +551,7 @@ if __name__ == "__main__":
     parser.add_argument('--data_dir', type=str, default='./misc/')
     parser.add_argument('--skip_embedding', action='store_true', help='skip embedding; load instead')
     parser.add_argument('--model', type=str, default="val_best", choices=["val_best", "test_best", "last"])
+    parser.add_argument('--variant', type=str, default="EqInv", choices=["EqInv", "IP-IRM"])
     subparsers = parser.add_subparsers(dest='method', help='embedding method: tsne, pca, umap')
 
     # create the parser for the "tsne" command
