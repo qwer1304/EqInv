@@ -482,7 +482,7 @@ def main(args):
         fidx = (lls == l) & test_samples
         domain_feat = cmap((coloffset + j) % n_cols)
         # Features scatter
-        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.2, s=4+4*j, marker=".", color=domain_feat, zorder=len(u_lls)+1-j)
+        axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=1.0, s=4+4*j, marker=".", color=domain_feat, zorder=len(u_lls)+1-j)
         # Create proxy handles for legend
         feature_proxy = mlines.Line2D([], [], color=domain_feat, marker="o", linestyle="None",
                                       markersize=6, label=f"{target}: {'Wrong' if l else 'Correct'}")
