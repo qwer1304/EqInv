@@ -11,10 +11,7 @@ class Imagenet_idx(datasets.ImageFolder):
 
     def __init__(self, root, transform=None, target_transform=None, class_to_idx=None):
         super(Imagenet_idx, self).__init__(root, transform, target_transform)
-        if class_to_idx is not None:
-            self.class_to_idx = {cls_name: class_to_idx(cls_name) for cls_name in self.classes}
-        else:
-            self.class_to_idx = None
+        self.class_to_idx = class_to_idx
 
     def __getitem__(self, index):
         """
@@ -46,10 +43,7 @@ class Imagenet_idx_pair(datasets.ImageFolder):
 
     def __init__(self, root, transform=None, target_transform=None, class_to_idx=None):
         super(Imagenet_idx_pair, self).__init__(root, transform, target_transform)
-        if class_to_idx is not None:
-            self.class_to_idx = {cls_name: class_to_idx(cls_name) for cls_name in self.classes}
-        else:
-            self.class_to_idx = None
+        self.class_to_idx = class_to_idx
 
     def __getitem__(self, index):
         """
@@ -81,10 +75,7 @@ class Imagenet_idx_pair_transformone(datasets.ImageFolder):
 
     def __init__(self, root, transform_simple=None, transform_hard=None, target_transform=None, class_to_idx=None):
         super(Imagenet_idx_pair_transformone, self).__init__(root, transform_simple, target_transform)
-        if class_to_idx is not None:
-            self.class_to_idx = {cls_name: class_to_idx(cls_name) for cls_name in self.classes}
-        else:
-            self.class_to_idx = None
+        self.class_to_idx = class_to_idx
         self.transform_hard = transform_hard
 
     def __getitem__(self, index):
