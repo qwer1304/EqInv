@@ -102,7 +102,6 @@ class ColoredMNIST(MultipleEnvironmentMNIST):
         else:
             y = labels.view(-1).long()
 
-        print(y)
         return TensorDataset(x, y)
 
     def torch_bernoulli_(self, p, size):
