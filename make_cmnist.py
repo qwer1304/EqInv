@@ -222,7 +222,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     
-    assert not (args.include_digit & not args.include_color), "include_digit requires include_color" 
+    assert not (args.include_digit and not args.include_color), "include_digit requires include_color" 
     
     assert len(args.env_names) == len(args.env_corr), 'Number of environment names must match that of correlations'
     assert [x > 1. or x < 0 for x in args.env_corr], 'Correlations out of range'
