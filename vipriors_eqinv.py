@@ -1147,6 +1147,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             if acc1 < 10:
                 print(len(images_idx),images_idx)
                 print(len(target),target)
+                print(output)
             losses.update(loss.item(), images.size(0))
             top1.update(acc1.item(), images.size(0))
             top5.update(acc5.item(), images.size(0))
