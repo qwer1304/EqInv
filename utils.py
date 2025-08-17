@@ -28,7 +28,7 @@ class Imagenet_idx(datasets.ImageFolder):
         if self.transform is not None:
             pos = self.transform(image)
         if self.target_transform is not None:
-            print(target)
+            print(path, target)
             target = self.target_transform(target)
 
         return pos, target, index
