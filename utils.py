@@ -30,7 +30,6 @@ class Imagenet_idx(datasets.ImageFolder):
             target = self.class_to_idx(folder_name)
 
         if self.target_transform is not None:
-            print(path, target)
             target = self.target_transform(target)
 
         return pos, target, index
