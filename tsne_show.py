@@ -112,6 +112,8 @@ def main(args):
         n_classes = weights_2d.shape[0]
         print('Done!')
    
+    n_digits = 10
+    
     y = labels
     X_Train_embedded = features_2d
     y_predicted = predicts
@@ -134,7 +136,10 @@ def main(args):
     u_y = np.unique(y)
     cols_dec = cmap((coloffset + 4*u_y) % n_cols)
 
-    fig, axs = plt.subplots(2, 3, figsize=(2*12, 3*5))  # 2 row, 3 columns
+    if np.max(labels_raw) > 3:
+        fig, axs = plt.subplots(3, 3, figsize=(3*10, 3*5))  # 3 row, 3 columns
+    else:
+        fig, axs = plt.subplots(2, 3, figsize=(2*12, 3*5))  # 2 row, 3 columns
     axs = axs.flatten()
     cmap = plt.cm.tab10
     n_cols = 10
@@ -400,12 +405,12 @@ def main(args):
 
     axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls))
     axs[i].set_title(f"{args.method} domained by {target}")
-    
+       
     i += 1
     cmap = plt.cm.tab20
     n_cols = 20
     coloffset = 7
-    lls = labels_raw #// n_classes
+    lls = labels_raw % (2*n_classes)
     target = "lab+col"
     val_samples = domains==0
     zorder = [0,2,3,1]
@@ -437,7 +442,7 @@ def main(args):
     cmap = plt.cm.tab20
     n_cols = 20
     coloffset = 7
-    lls = labels_raw #// n_classes
+    lls = labels_raw % (2*n_classes)
     target = "lab+col"
     test_samples = domains==1
     labs = ['0/R', '1/R', '0/G', '1/G']
@@ -464,6 +469,72 @@ def main(args):
     axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls) // n_classes)
     axs[i].set_title(f"{args.method} domained by {target} @ Test")
 
+    #--------------------------------
+    if np.max(labels_raw) > 3: # digits are present
+        i += 1
+        cmap = plt.cm.tab10
+        n_cols = 10
+        coloffset = 0
+        lls = labels_raw // (2*n_classes)
+        target = "digits"
+        val_samples = domains==0
+        zorder = 1
+        labs = [str(j) for j in range(10)]
+        print('Plotting digits @ Val ...', end="")
+
+        u_lls = np.unique(lls)
+
+        handles = []
+
+        for j, l in enumerate(u_lls):
+            fidx = (lls == l) & val_samples
+            domain_feat = cmap((coloffset + l) % n_cols)
+            # Features scatter
+            axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.7, s=4, marker="o", color=domain_feat, zorder=1, #len(u_lls)-j,
+                                    edgecolors='white', linewidth=0.1)
+            #axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.5, s=4, marker=".", color=domain_feat, zorder=len(u_lls)-j, edgecolors='white', linewidth=0.1)
+            # Create proxy handles for legend
+            feature_proxy = mlines.Line2D([], [], color=domain_feat, marker="o", linestyle="None",
+                                          markersize=6, label=f"{target}: {labs[l]}")
+            handles.append(feature_proxy)
+
+        print('Done')
+
+        axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls) // n_classes)
+        axs[i].set_title(f"{args.method} domained by {target} @ Val")
+
+        i += 1
+        cmap = plt.cm.tab10
+        n_cols = 10
+        coloffset = 0
+        lls = labels_raw // (2*n_classes)
+        target = "digits"
+        test_samples = domains==1
+        labs = [str(j) for j in range(10)]
+        zorder = 1
+        print('Plotting digits @ Test ... ', end="")
+
+        u_lls = np.unique(lls)
+
+        handles = []
+
+        for j, l in enumerate(u_lls):
+            fidx = (lls == l) & test_samples
+            domain_feat = cmap((coloffset + l) % n_cols)
+            # Features scatter
+            axs[i].scatter(features_2d[fidx][:, 0], features_2d[fidx][:, 1], alpha=0.7, s=4, marker="o", color=domain_feat, zorder=1, #len(u_lls)-j,
+                                    edgecolors='white', linewidth=0.1)
+            # Create proxy handles for legend
+            feature_proxy = mlines.Line2D([], [], color=domain_feat, marker="o", linestyle="None",
+                                          markersize=6, label=f"{target}: {labs[l]}")
+            handles.append(feature_proxy)
+
+        print('Done')
+
+        axs[i].legend(handles=handles, loc='upper center', ncol=len(u_lls) // n_classes)
+        axs[i].set_title(f"{args.method} domained by {target} @ Test")
+   
+    #---------------------------
     i += 1
     axs[i].contourf(xx, yy, voronoiBackground, colors=cols_dec, zorder=0, levels=len(u_y)+1)
     cmap = plt.cm.tab10

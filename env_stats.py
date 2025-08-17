@@ -90,14 +90,14 @@ def main(args):
 
     # number of "other" samples with colors 0/1 in all envs and their sum
     idx = [i for idxs in env_ref_set[anchor] for i in idxs]
-    count_c0_o = [memory_images.imgs[i][label] // num_labels for i in idx].count(0)
-    count_c1_o = [memory_images.imgs[i][label] // num_labels for i in idx].count(1)
+    count_c0_o = [(memory_images.imgs[i][label] % (num_colors*num_labels)) // num_labels for i in idx].count(0)
+    count_c1_o = [(memory_images.imgs[i][label] % (num_colors*num_labels)) // num_labels for i in idx].count(1)
 
     # number of anchor samples
     indx_a = [j for j in range(len(memory_images)) if memory_images.imgs[j][label] % 2 == anchor]
     # number of anchor samples with colors 0/1 and their sum
-    count_c0_a = [memory_images.imgs[j][label] // num_labels for j in indx_a].count(0)
-    count_c1_a = [memory_images.imgs[j][label] // num_labels for j in indx_a].count(1)
+    count_c0_a = [(memory_images.imgs[i][label] % (num_colors*num_labels)) // num_labels for j in indx_a].count(0)
+    count_c1_a = [(memory_images.imgs[i][label] % (num_colors*num_labels)) // num_labels for j in indx_a].count(1)
 
     # number of "other" samples with colors 0/1 in all envs and their sum
     print(2, f'anchor {anchor}:','R:', count_c0_o, 'G:', count_c1_o, \
@@ -123,14 +123,14 @@ def main(args):
 
     # number of "other" samples with colors 0/1 in all envs and their sum
     idx = [i for idxs in env_ref_set[anchor] for i in idxs]
-    count_c0_o = [memory_images.imgs[i][label] // num_labels for i in idx].count(0)
-    count_c1_o = [memory_images.imgs[i][label] // num_labels for i in idx].count(1)
+    count_c0_o = [(memory_images.imgs[i][label] % (num_colors*num_labels)) // num_labels for i in idx].count(0)
+    count_c1_o = [(memory_images.imgs[i][label] % (num_colors*num_labels)) // num_labels for i in idx].count(1)
 
     # number of anchor samples
     indx_a = [j for j in range(len(memory_images)) if memory_images.imgs[j][label] % num_labels == anchor]
     # number of anchor samples with colors 0/1 and their sum
-    count_c0_a = [memory_images.imgs[j][label] // num_labels for j in indx_a].count(0)
-    count_c1_a = [memory_images.imgs[j][label] // num_labels for j in indx_a].count(1)
+    count_c0_a = [(memory_images.imgs[i][label] % (num_colors*num_labels)) // num_labels for j in indx_a].count(0)
+    count_c1_a = [(memory_images.imgs[i][label] % (num_colors*num_labels)) // num_labels for j in indx_a].count(1)
 
     # number of "other" samples with colors R/G in all envs and their sum
     print(6, f'anchor {anchor}:','R:', count_c0_o, 'G:', count_c1_o, \
@@ -176,8 +176,8 @@ def main(args):
 
         for e in range(env_col.shape[0]):
             env_col[e] = np.array([
-                sum([memory_images.imgs[j][label] // num_labels == R for j in env_n[e]]),
-                sum([memory_images.imgs[j][label] // num_labels == G for j in env_n[e]])
+                sum([(memory_images.imgs[j][label] % (num_colors*num_labels)) // num_labels == R for j in env_n[e]]),
+                sum([(memory_images.imgs[j][label] % (num_colors*num_labels)) // num_labels == G for j in env_n[e]])
             ])
 
         labels = ['R', 'G']
@@ -218,8 +218,8 @@ def main(args):
         idxs_a = r.choice(len(env_a), int(fraction*len(env_a)), replace=False) 
 
         col_a = np.array([
-            sum([memory_images.imgs[env_a[j]][label] // num_labels == R for j in idxs_a]),
-            sum([memory_images.imgs[env_a[j]][label] // num_labels == G for j in idxs_a])
+            sum([(memory_images.imgs[env_a[j]][label] % (num_colors*num_labels)) // num_labels == R for j in idxs_a]),
+            sum([(memory_images.imgs[env_a[j]][label] % (num_colors*num_labels)) // num_labels == G for j in idxs_a])
             ])
             
         perc = (env_col + col_a) / (env_col + col_a).sum(axis=0, keepdims=True) * 100 # (env, col)        
@@ -260,8 +260,8 @@ def main(args):
         tab = np.hstack((env_col, col_a, env_tar))
 
         def col_label_corr(idxs):
-            col = [memory_images.imgs[j][label] // 2 for j in idxs]
-            tar = [memory_images.imgs[j][label] % 2 for j in idxs]
+            col = [(memory_images.imgs[j][label] % (num_colors*num_labels)) // num_labels for j in idxs]
+            tar = [memory_images.imgs[j][label] % num_labels for j in idxs]
             x = np.asarray(col)
             y = np.asarray(tar)
             std_x = np.std(x)
@@ -360,9 +360,9 @@ def main(args):
     num_vals = len(val_images)
     num_test = len(test_images)
 
-    col_train, tar_train = [train_images.imgs[j][label] // num_labels for j in range(num_train)], [train_images.imgs[j][label] % num_labels for j in range(num_train)]
-    col_val, tar_val = [val_images.imgs[j][label] // num_labels for j in range(num_vals)], [val_images.imgs[j][label] % num_labels for j in range(num_vals)]
-    col_test, tar_test = [test_images.imgs[j][label] // num_labels for j in range(num_test)], [test_images.imgs[j][label] % num_labels for j in range(num_test)]
+    col_train, tar_train = [(train_images.imgs[j][label] % (num_colors*num_labels)) // num_labels for j in range(num_train)], [train_images.imgs[j][label] % num_labels for j in range(num_train)]
+    col_val, tar_val = [(val_images.imgs[j][label] % (num_colors*num_labels)) // num_labels for j in range(num_vals)], [val_images.imgs[j][label] % num_labels for j in range(num_vals)]
+    col_test, tar_test = [(test_images.imgs[j][label] % (num_colors*num_labels)) // num_labels for j in range(num_test)], [test_images.imgs[j][label] % num_labels for j in range(num_test)]
     corr_train = np.corrcoef(np.array(col_train), np.array(tar_train))
     corr_val = np.corrcoef(np.array(col_val), np.array(tar_val))
     corr_test = np.corrcoef(np.array(col_test), np.array(tar_test))
