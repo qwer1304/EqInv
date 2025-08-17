@@ -1141,6 +1141,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
                 output = model(images)
 
             loss = criterion(output, target)
+            print(target)
 
             # measure accuracy and record loss
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
