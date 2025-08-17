@@ -63,6 +63,7 @@ class ColoredMNIST(MultipleEnvironmentMNIST):
     def __init__(self, root, args):
         # must come before calling super
         self.include_color = args.include_color
+        self.include_digit = args.include_digit
         self.label_noise = args.label_noise
         #                                 (root, environments,  dataset_transform,  input_shape,  num_classes)
         super(ColoredMNIST, self).__init__(root, args.env_corr, self.color_dataset, (3, 28, 28,), 2)
