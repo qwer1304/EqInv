@@ -91,7 +91,7 @@ class ColoredMNIST(MultipleEnvironmentMNIST):
 
         x = images.float().div_(255.0)
         if self.include_digit:
-            y = digits.view(-1).long * 2 * 2 + colors.view(-1).long() * 2 + labels.view(-1).long()
+            y = digits.view(-1).long() * 2 * 2 + colors.view(-1).long() * 2 + labels.view(-1).long()
         elif self.include_color:
             y = colors.view(-1).long() * 2 + labels.view(-1).long()
         else:
