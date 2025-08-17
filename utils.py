@@ -3,9 +3,7 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import datasets
-
-
-
+import os
 
 class Imagenet_idx(datasets.ImageFolder):
     """Folder datasets which returns the index of the image as well
