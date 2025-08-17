@@ -69,7 +69,12 @@ class ColoredMNIST(MultipleEnvironmentMNIST):
         super(ColoredMNIST, self).__init__(root, args.env_corr, self.color_dataset, (3, 28, 28,), 2)
 
         self.input_shape = (3, 28, 28,)
-        self.num_classes = 4 if self.include_color else 2
+        if self.include_digit:
+            self.num_classes =  = 2 * 2 * 10
+        elif self.include_color:
+            self.num_classes = 4 
+        else:
+            self.include_color = 2
         self.N_WORKERS = 1
         self.environments = args.env_names
 
