@@ -115,6 +115,7 @@ parser.add_argument('--image_size', type=int, default=224, help='image size')
 
 # color in label
 parser.add_argument('--target_transform', type=str, default=None, help='a function definition to apply to target')
+parser.add_argument('--class_to_idx', type=str, default=None, help='a function definition to apply to class to obtain it index')
 
 # space between columns
 parser.add_argument('--spaces', type=int, default=4, help='spaces between entries in progress print (instead of tab)')
@@ -403,18 +404,19 @@ def main():
     val_transform = make_test_transform()
 
     target_transform = eval(args.target_transform) if args.target_transform is not None else None
+    class_to_idx = eval(args.class_to_idx) if args.class_to_idx is not None else None
     
-    images = utils.Imagenet_idx(root=args.data+'/val', transform=val_transform, target_transform=target_transform)
+    images = utils.Imagenet_idx(root=args.data+'/val', transform=val_transform, target_transform=target_transform, class_to_idx=class_to_idx)
     val_loader = torch.utils.data.DataLoader(images, batch_size=args.batch_size, num_workers=args.workers, shuffle=args.val_shuffle)
-    test_images = utils.Imagenet_idx(root=args.data+'/testgt', transform=val_transform, target_transform=target_transform)
+    test_images = utils.Imagenet_idx(root=args.data+'/testgt', transform=val_transform, target_transform=target_transform, class_to_idx=class_to_idx)
     test_loader = torch.utils.data.DataLoader(test_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=args.test_shuffle)
 
     if args.random_aug:
         train_images = utils.Imagenet_idx_pair_transformone(root=args.data + '/train', transform_simple=train_transform, 
-            transform_hard=train_transform_hard, target_transform=target_transform)
+            transform_hard=train_transform_hard, target_transform=target_transform, class_to_idx=class_to_idx)
     else:
-        train_images = utils.Imagenet_idx_pair(root=args.data+'/train', transform=train_transform, target_transform=target_transform)
-    memory_images = utils.Imagenet_idx(root=args.data + '/train', transform=val_transform, target_transform=target_transform)
+        train_images = utils.Imagenet_idx_pair(root=args.data+'/train', transform=train_transform, target_transform=target_transform, class_to_idx=class_to_idx)
+    memory_images = utils.Imagenet_idx(root=args.data + '/train', transform=val_transform, target_transform=target_transform, class_to_idx=class_to_idx)
     train_loader = torch.utils.data.DataLoader(train_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=True, drop_last=True)
     memory_loader = torch.utils.data.DataLoader(memory_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=False)
 
@@ -1144,10 +1146,6 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
 
             # measure accuracy and record loss
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
-            if acc1 < 10:
-                print(len(images_idx),images_idx)
-                print(len(target),target)
-                print(output)
             losses.update(loss.item(), images.size(0))
             top1.update(acc1.item(), images.size(0))
             top5.update(acc5.item(), images.size(0))
