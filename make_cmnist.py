@@ -70,7 +70,7 @@ class ColoredMNIST(MultipleEnvironmentMNIST):
 
         self.input_shape = (3, 28, 28,)
         if self.include_digit:
-            self.num_classes =  = 2 * 2 * 10
+            self.num_classes = 2 * 2 * 10
         elif self.include_color:
             self.num_classes = 4 
         else:
