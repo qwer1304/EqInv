@@ -74,7 +74,7 @@ class ColoredMNIST(MultipleEnvironmentMNIST):
         elif self.include_color:
             self.num_classes = 4 
         else:
-            self.include_color = 2
+            self.num_classes = 2
         self.N_WORKERS = 1
         self.environments = args.env_names
 
@@ -102,6 +102,7 @@ class ColoredMNIST(MultipleEnvironmentMNIST):
         else:
             y = labels.view(-1).long()
 
+        print(y)
         return TensorDataset(x, y)
 
     def torch_bernoulli_(self, p, size):
