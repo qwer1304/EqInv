@@ -15,6 +15,8 @@ class Imagenet_idx(datasets.ImageFolder):
         super(Imagenet_idx, self).__init__(root, transform, target_transform)
         if class_to_idx is not None:
             self.class_to_idx = {cls_name: class_to_idx(cls_name) for cls_name in self.classes}
+            print(self.classes)
+            print(self.class_to_idx)
 
     def __getitem__(self, index):
         """
