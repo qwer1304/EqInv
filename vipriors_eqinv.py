@@ -1145,8 +1145,8 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             # measure accuracy and record loss
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
             if acc1 < 10:
-                print(images_idx)
-                print(target)
+                print(len(images_idx),images_idx)
+                print(len(target),target)
             losses.update(loss.item(), images.size(0))
             top1.update(acc1.item(), images.size(0))
             top5.update(acc5.item(), images.size(0))
