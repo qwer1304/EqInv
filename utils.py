@@ -15,6 +15,8 @@ class Imagenet_idx(datasets.ImageFolder):
         super(Imagenet_idx, self).__init__(root, transform, target_transform)
         if class_to_idx is not None:
             self.class_to_idx = {cls_name: class_to_idx(cls_name) for cls_name in self.classes}
+        else:
+            self.class_to_idx = None
 
     def __getitem__(self, index):
         """
@@ -27,6 +29,11 @@ class Imagenet_idx(datasets.ImageFolder):
         image = self.loader(path)
         if self.transform is not None:
             pos = self.transform(image)
+
+        if self.class_to_idx is not None:
+            folder_name = os.path.basename(os.path.dirname(path))
+            target = self.class_to_idx(folder_name)
+
         if self.target_transform is not None:
             print(path, target)
             target = self.target_transform(target)
@@ -43,6 +50,8 @@ class Imagenet_idx_pair(datasets.ImageFolder):
         super(Imagenet_idx_pair, self).__init__(root, transform, target_transform)
         if class_to_idx is not None:
             self.class_to_idx = {cls_name: class_to_idx(cls_name) for cls_name in self.classes}
+        else:
+            self.class_to_idx = None
 
     def __getitem__(self, index):
         """
@@ -56,6 +65,11 @@ class Imagenet_idx_pair(datasets.ImageFolder):
         if self.transform is not None:
             pos1 = self.transform(image)
             pos2 = self.transform(image)
+        
+        if self.class_to_idx is not None:
+            folder_name = os.path.basename(os.path.dirname(path))
+            target = self.class_to_idx(folder_name)
+
         if self.target_transform is not None:
             target = self.target_transform(target)
 
@@ -71,6 +85,8 @@ class Imagenet_idx_pair_transformone(datasets.ImageFolder):
         super(Imagenet_idx_pair_transformone, self).__init__(root, transform_simple, target_transform)
         if class_to_idx is not None:
             self.class_to_idx = {cls_name: class_to_idx(cls_name) for cls_name in self.classes}
+        else:
+            self.class_to_idx = None
         self.transform_hard = transform_hard
 
     def __getitem__(self, index):
@@ -88,6 +104,11 @@ class Imagenet_idx_pair_transformone(datasets.ImageFolder):
         if self.transform_hard is not None:
             pos1_hard = self.transform_hard(image)
             pos2_hard = self.transform_hard(image)
+
+        if self.class_to_idx is not None:
+            folder_name = os.path.basename(os.path.dirname(path))
+            target = self.class_to_idx(folder_name)
+
         if self.target_transform is not None:
             target = self.target_transform(target)
 
