@@ -137,7 +137,7 @@ def main(args):
     cols_dec = cmap((coloffset + 4*u_y) % n_cols)
 
     if np.max(labels_raw) > 3:
-        fig, axs = plt.subplots(3, 3, figsize=(3*10, 3*5))  # 3 row, 3 columns
+        fig, axs = plt.subplots(3, 3, figsize=(3*8, 3*5))  # 3 row, 3 columns
     else:
         fig, axs = plt.subplots(2, 3, figsize=(2*12, 3*5))  # 2 row, 3 columns
     axs = axs.flatten()
@@ -471,7 +471,7 @@ def main(args):
 
     #--------------------------------
     if np.max(labels_raw) > 3: # digits are present
-        i += 1
+        i += 2
         cmap = plt.cm.tab10
         n_cols = 10
         coloffset = 0

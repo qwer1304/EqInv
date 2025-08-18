@@ -66,7 +66,8 @@ def main(args):
     num_colors = num_labels
     K = len(env_ref_set[0])
     data = args.data
-    memory_images = utils.Imagenet_idx(root=data + '/train', transform=None, target_transform=None)
+    class_to_idx = eval(args.class_to_idx) if args.class_to_idx is not None else None
+    memory_images = utils.Imagenet_idx(root=data + '/train', transform=None, target_transform=None, class_to_idx=class_to_idx)
     num_samples = len(memory_images)
     all_idx = list(range(num_samples))
 
@@ -352,9 +353,9 @@ def main(args):
 
         print(table0)
 
-    train_images = utils.Imagenet_idx(root=data+'/train', transform=None, target_transform=None)
-    val_images = utils.Imagenet_idx(root=data+'/val', transform=None, target_transform=None)
-    test_images = utils.Imagenet_idx(root=data+'/testgt', transform=None, target_transform=None)
+    train_images = utils.Imagenet_idx(root=data+'/train', transform=None, target_transform=None, class_to_idx=class_to_idx)
+    val_images = utils.Imagenet_idx(root=data+'/val', transform=None, target_transform=None, class_to_idx=class_to_idx)
+    test_images = utils.Imagenet_idx(root=data+'/testgt', transform=None, target_transform=None, class_to_idx=class_to_idx)
 
     num_train = len(train_images)
     num_vals = len(val_images)
@@ -400,6 +401,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--fp', type=str, help='path of cluster file')
     parser.add_argument('--data', type=str, default='./data/DataSets/CMNIST_wcolor/64')
+    parser.add_argument('--class_to_idx', type=str, default=None, help='a function definition to apply to class to obtain it index')
     parser.add_argument('--title_width', type=int, default=40)
     parser.add_argument('--anchor_fraction', type=float, default=0.1, help='Fraction of anchors to include in envs')
     
