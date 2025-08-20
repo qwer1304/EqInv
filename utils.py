@@ -215,10 +215,10 @@ class activation_map():
             tau = 1
             u = torch.rand_like(x)
             g = -torch.log(-torch.log(u + 1e-20) + 1e-20)
-            x_soft = torch.sigmoid((self.logits + g) / tau)  # (N,)
+            x_soft = torch.sigmoid((x + g) / tau)  # (N,)
 
             if soft:
-                mask = y_soft
+                mask = x_soft
             else:
                 # Hard straight-through: forward 0/1, backward gradient through soft
                 x_hard = (x_soft > 0.5).float()
