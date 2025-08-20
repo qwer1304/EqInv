@@ -616,15 +616,16 @@ def train_env_nonanchirm(train_loader, model, env_ref_set, criterion_tuple, opti
     criterion_ERM, criterion_cont, criterion_inv = criterion_tuple
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
-    losses = AverageMeter('Loss', ':.4e')
-    losses_cont = AverageMeter('Loss_Cont', ':.4e')
-    losses_inv = AverageMeter('Loss_Inv', ':.4e')
+    losses = AverageMeter('Loss', ':.2e')
+    losses_cont = AverageMeter('Loss_Cont', ':.2e')
+    losses_inv = AverageMeter('Loss_Inv', ':.2e')
+    losses_sparsity = AverageMeter('Loss_Sparse', ':.2e')
     top1 = AverageMeter('Acc@1', ':6.2f')
     top5 = AverageMeter('Acc@5', ':6.2f')
     LR = AverageMeter('LR', ':6.4f')
     progress = ProgressMeter(
         len(train_loader),
-        [batch_time, data_time, losses, losses_cont, losses_inv, top1, top5, LR],
+        [batch_time, data_time, losses, losses_cont, losses_inv, losses_sparsity, top1, top5, LR],
         prefix="Epoch: [{}]".format(epoch),
         log_file=args.log_file)
 
@@ -862,6 +863,7 @@ def train_env_nonanchirm(train_loader, model, env_ref_set, criterion_tuple, opti
         losses.update(loss_erm.item(), images1.size(0)+images2.size(0))
         losses_cont.update(loss_cont.item(), images1.size(0)+images2.size(0))
         losses_inv.update(loss_inv.item(), images1.size(0)+images2.size(0))
+        losses_sparsity.update(loss_sparsity.item(), images1.size(0)+images2.size(0))
         top1.update(acc1.item(), images1.size(0)+images2.size(0))
         top5.update(acc5.item(), images1.size(0)+images2.size(0))
         LR.update(optimizer.param_groups[0]['lr'])
@@ -888,15 +890,16 @@ def train_env_nonanchirm(train_loader, model, env_ref_set, criterion_tuple, opti
 def train_env(train_loader, model, env_ref_set, criterion, optimizer, epoch, args):
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
-    losses = AverageMeter('Loss', ':.4e')
-    losses_cont = AverageMeter('Loss_Cont', ':.4e')
-    losses_inv = AverageMeter('Loss_Inv', ':.4e')
+    losses = AverageMeter('Loss', ':.2e')
+    losses_cont = AverageMeter('Loss_Cont', ':.2e')
+    losses_inv = AverageMeter('Loss_Inv', ':.2e')
+    losses_sparsity = AverageMeter('Loss_Sparse', ':.2e')
     top1 = AverageMeter('Acc@1', ':6.2f')
     top5 = AverageMeter('Acc@5', ':6.2f')
     LR = AverageMeter('LR', ':6.4f')
     progress = ProgressMeter(
         len(train_loader),
-        [batch_time, data_time, losses, losses_cont, losses_inv, top1, top5, LR],
+        [batch_time, data_time, losses, losses_cont, losses_inv, losses_sparsity, top1, top5, LR],
         prefix="Epoch: [{}]".format(epoch),
         log_file=args.log_file)
 
@@ -1074,10 +1077,17 @@ def train_env(train_loader, model, env_ref_set, criterion, optimizer, epoch, arg
                                      labels=target)
 
 
-        loss_all = loss_erm + loss_cont + loss_inv
+        if args.activat_type == "gumbel" and args.mask_sparsity is not None and not args.gumble_soft:
+            active_count = activation.sum()
+            loss_sparsity = args.mask_sparsity_weight * F.relu(active_count - args.mask_sparsity)  
+        else:
+            loss_sparsity = torch.Tensor([0.]).cuda()
+
+        loss_all = loss_erm + loss_cont + loss_inv + loss_sparsity
         assert torch.isfinite(loss_inv).item(), 'loss_inv not finite' 
         assert torch.isfinite(loss_cont).item(), 'loss_cont not finite' 
         assert torch.isfinite(loss_erm).item(), 'loss_erm not finite' 
+        assert torch.isfinite(loss_sparsity).item(), 'loss_sparsity not finite' 
 
 
         # measure accuracy and record loss
@@ -1085,6 +1095,7 @@ def train_env(train_loader, model, env_ref_set, criterion, optimizer, epoch, arg
         losses.update(loss_erm.item(), images1.size(0)+images2.size(0))
         losses_cont.update(loss_cont.item(), images1.size(0)+images2.size(0))
         losses_inv.update(loss_inv.item(), images1.size(0)+images2.size(0))
+        losses_sparsity.update(loss_sparsity.item(), images1.size(0)+images2.size(0))
         top1.update(acc1.item(), images1.size(0)+images2.size(0))
         top5.update(acc5.item(), images1.size(0)+images2.size(0))
         LR.update(optimizer.param_groups[0]['lr'])
