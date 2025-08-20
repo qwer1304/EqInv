@@ -345,8 +345,8 @@ def main():
     model_base.fc = nn.Identity()
 
     if args.opt_mask:
-        mask_layer = torch.rand(ft_fc.weight.size(1),device="cuda")
-    else:
+        mask_layer = torch.rand(ft_fc.weight.size(1),device="cuda") # weight is (out_features,in_features)
+    else: 
         mask_layer = torch.ones(ft_fc.weight.size(1),device="cuda")   
     model = utils.ResNet_ft_eqinv(model_base, ft_fc, mask_layer=mask_layer, args=args)
     model = torch.nn.DataParallel(model).cuda()

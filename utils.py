@@ -143,6 +143,7 @@ class ResNet_ft(nn.Module):
 
 class ResNet_ft_eqinv(nn.Module):
     def __init__(self, model, fc, mask_layer=None, args=None):
+        # mask_layer: (num_features,) tensor
         super(ResNet_ft_eqinv, self).__init__()
         self.model = model
         self.fc = fc
@@ -172,7 +173,7 @@ class ResNet_ft_eqinv(nn.Module):
 
         if self.mask_layer is not None:
             device = feature.device
-            activation = self.activation_map.apply(self.mask_layer).to(device)
+            activation = self.activation_map.apply(self.mask_layer).to(device) # mask_layer (num_features,) tensor
             if self.args.freeze_feat:
                 masked_feature_erm = F.normalize(activation * feature.detach(), dim=-1) * self.scaler # nomalize for numeral stability
             else:                
@@ -199,26 +200,30 @@ class ResNet_ft_eqinv(nn.Module):
         else:
             return output
 
-
-
-
-
 class activation_map():
     def __init__(self, activation_type):
         self.activation_type = activation_type
 
     def apply(self, x, soft=False):
+        # x: (num_features,) tensor
         if self.activation_type == 'sigmoid':
             return torch.sigmoid(x)
         elif self.activation_type == 'ident':
             return x
         elif self.activation_type == 'gumbel':
-            if soft:
-                x_hard = F.gumbel_softmax(x, tau=1, hard=False)
-            else:
-                x_hard = F.gumbel_softmax(x, tau=1, hard=True)
-            return x_hard[:,1].squeeze().unsqueeze(0)
+            # Sample Gumbel noise
+            tau = 1
+            u = torch.rand_like(x)
+            g = -torch.log(-torch.log(u + 1e-20) + 1e-20)
+            x_soft = torch.sigmoid((self.logits + g) / tau)  # (N,)
 
+            if soft:
+                mask = y_soft
+            else:
+                # Hard straight-through: forward 0/1, backward gradient through soft
+                x_hard = (x_soft > 0.5).float()
+                mask = x_hard + x_soft - x_soft.detach()
+            return mask
 
 from PIL import ImageFilter
 class GaussianBlur(object):
