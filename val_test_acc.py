@@ -122,6 +122,16 @@ def main(args):
     ax[0].plot(range(len(test_acc)), test_acc, label='Test', marker='x')
     ax[0].scatter(ibest_val_acc2, best_val_acc2, marker='x', label='Best Val', s=50, linewidths=3, color='magenta', zorder=2)
     ax[0].scatter(ibest_val_acc2, test_best_val_acc2, marker='x', label='Best Test', s=50, linewidths=3, color='red', zorder=2)
+    ax[0].annotate(f"{best_val_acc2:.2f}",  # text
+             xy=(ibest_val_acc2, best_val_acc2),  # point coordinates
+             xytext=(-80,-80),  # text position
+             arrowprops=dict(arrowstyle='->', color='magenta'),
+             textcoords='offset points',)
+    ax[0].annotate(f"{test_best_val_acc2:.2f}",  # text
+             xy=(ibest_val_acc2, test_best_val_acc2),  # point coordinates
+             xytext=(40,-70),  # text position
+             arrowprops=dict(arrowstyle='->', color='red'),
+             textcoords='offset points',)
 
     ax[0].set_xlabel("Epoch")
     ax[0].set_ylabel("Acc")

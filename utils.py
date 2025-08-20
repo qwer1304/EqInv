@@ -153,7 +153,7 @@ class ResNet_ft_eqinv(nn.Module):
             self.mask_layer = mask_layer
         self.args = args
         if mask_layer is not None: # use mask
-            self.activation_map = activation_map(args.activat_type)
+            self.activation_map = activation_map(args.activat_type, tau=args.gumble_tau, soft=args.gumble_soft, K=args.mask_sparsity)
             self.scaler = 10
 
         if 'mlp' in args and args.mlp: # use mlp
@@ -194,17 +194,20 @@ class ResNet_ft_eqinv(nn.Module):
                 raise NotImplementedError
             else:
                 if self.args.mlp:
-                    return self.mlp(masked_feature_erm), masked_feature_inv, output
+                    return self.mlp(masked_feature_erm), masked_feature_inv, output, activation
                 else:
-                    return masked_feature_erm, masked_feature_inv, output
+                    return masked_feature_erm, masked_feature_inv, output, activation
         else:
             return output
 
 class activation_map():
-    def __init__(self, activation_type):
+    def __init__(self, activation_type, K=None, tau=1.0, soft=False):
         self.activation_type = activation_type
+        self.K = K
+        self.tau = tau
+        self.soft = soft
 
-    def apply(self, x, soft=False):
+    def apply(self, x):
         # x: (num_features,) tensor
         if self.activation_type == 'sigmoid':
             return torch.sigmoid(x)
@@ -212,12 +215,11 @@ class activation_map():
             return x
         elif self.activation_type == 'gumbel':
             # Sample Gumbel noise
-            tau = 1
             u = torch.rand_like(x)
             g = -torch.log(-torch.log(u + 1e-20) + 1e-20)
-            x_soft = torch.sigmoid((x + g) / tau)  # (N,)
+            x_soft = torch.sigmoid((x + g) / self.tau)  # (N,)
 
-            if soft:
+            if self.soft:
                 mask = x_soft
             else:
                 # Hard straight-through: forward 0/1, backward gradient through soft

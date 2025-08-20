@@ -92,6 +92,10 @@ parser.add_argument('--random_aug', action="store_true", default=False, help='ra
 #### add mask
 parser.add_argument('--activat_type', type=str, default='sigmoid', choices=['sigmoid', 'ident', 'gumbel'], help='type of activation in mask')
 parser.add_argument('--opt_mask', action="store_true", default=False, help='optimize the mask')
+parser.add_argument('--gumble_tau', type=float, default=1.0, help='tau for gumble mask')
+parser.add_argument('--gumble_soft', action="store_true", help='soft gumble')
+parser.add_argument('--mask_sparsity', type=int, default=None, help='sparsity K s.t. # of hot masks <= K')
+parser.add_argument('--mask_sparsity_weight', type=float, default=0.0, help='weight of sparsity loss')
 
 parser.add_argument('--pretrain_model', action="store_true", default=False, help='use pretrain model?')
 parser.add_argument('--pretrain_path', type=str, default=None, help='the path of pretrain model')
@@ -420,9 +424,6 @@ def main():
     train_loader = torch.utils.data.DataLoader(train_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=True, drop_last=True)
     memory_loader = torch.utils.data.DataLoader(memory_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=False)
 
-    activation_map = utils.activation_map(args.activat_type)
-
-
     if args.evaluate:
         print(f"Staring evaluation name: {args.name}")
         if args.resume:
@@ -527,9 +528,9 @@ def main():
         # train for one epoch
         if args.nonancenvirm:
             criterion_tuple = (criterion, criterion, criterion_label_smoothed)
-            train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, criterion_tuple, optimizer, epoch, args)
+            train_env_nonanchirm(train_loader, model, env_ref_set, criterion_tuple, optimizer, epoch, args)
         else:
-            train_env(train_loader, model, activation_map, env_ref_set, criterion, optimizer, epoch, args)
+            train_env(train_loader, model, env_ref_set, criterion, optimizer, epoch, args)
 
         # evaluate on validation set
         acc1 = validate(val_loader, model, criterion, args, epoch, prefix='Val: ')
@@ -611,7 +612,7 @@ def _mask_grads(gradients, model, k=10., tau=0.7):
         param.grad = mask * avg_grad
         param.grad *= (1. / (1e-10 + mask_t))
 
-def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, criterion_tuple, optimizer, epoch, args):
+def train_env_nonanchirm(train_loader, model, env_ref_set, criterion_tuple, optimizer, epoch, args):
     criterion_ERM, criterion_cont, criterion_inv = criterion_tuple
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
@@ -673,8 +674,8 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
         #   return masked_feature_erm, masked_feature_inv, output
         # masked_feature_for_globalcont = mlp(masked_feature_erm)
         # masked_feature = masked_feature_inv
-        masked_feature1, masked_feature_inv1, output1 = model(images1, return_masked_feature=True)
-        masked_feature2, masked_feature_inv2, output2 = model(images2, return_masked_feature=True)
+        masked_feature1, masked_feature_inv1, output1, activation = model(images1, return_masked_feature=True)
+        masked_feature2, masked_feature_inv2, output2, _ = model(images2, return_masked_feature=True)
         if args.random_aug:
             output_hard = model(torch.cat([images1_hard, images2_hard]))
 
@@ -843,12 +844,18 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
                                          labels=target)
         else:
             loss_cont = torch.Tensor([0.]).cuda()
+            
+        if args.activat_type == "gumbel" and args.mask_sparsity is not None and not args.gumble_soft:
+            active_count = activation.sum()
+            loss_sparsity = args.mask_sparsity_weight * F.relu(active_count - args.mask_sparsity)  
+        else:
+            loss_sparsity = torch.Tensor([0.]).cuda()
 
-
-        loss_all = loss_erm + loss_cont + loss_inv
+        loss_all = loss_erm + loss_cont + loss_inv + loss_sparsity
         assert torch.isfinite(loss_inv).item(), 'loss_inv not finite' 
         assert torch.isfinite(loss_cont).item(), 'loss_cont not finite' 
         assert torch.isfinite(loss_erm).item(), 'loss_erm not finite' 
+        assert torch.isfinite(loss_sparsity).item(), 'loss_sparsity not finite' 
 
         # measure accuracy and record loss
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
@@ -878,7 +885,7 @@ def train_env_nonanchirm(train_loader, model, activation_map, env_ref_set, crite
     progress.prefix = "Train: "  
     progress.display_summary(epoch)
 
-def train_env(train_loader, model, activation_map, env_ref_set, criterion, optimizer, epoch, args):
+def train_env(train_loader, model, env_ref_set, criterion, optimizer, epoch, args):
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
@@ -937,8 +944,8 @@ def train_env(train_loader, model, activation_map, env_ref_set, criterion, optim
         #   return self.mlp(masked_feature_erm), masked_feature_inv, output
         # else:
         #   return masked_feature_erm, masked_feature_inv, output
-        masked_feature1, masked_feature_inv1, output1 = model(images1, return_masked_feature=True)
-        masked_feature2, masked_feature_inv2, output2 = model(images2, return_masked_feature=True)
+        masked_feature1, masked_feature_inv1, output1, activation = model(images1, return_masked_feature=True)
+        masked_feature2, masked_feature_inv2, output2, _ = model(images2, return_masked_feature=True)
         if args.random_aug:
             output_hard = model(torch.cat([images1_hard, images2_hard]))
 
@@ -1133,7 +1140,7 @@ def validate(val_loader, model, criterion, args, epoch, prefix='Test: '):
             if args.extract_features:
                     mlp = model.module.args.mlp
                     model.module.args.mlp = False
-                    masked_feature_erm, _, output = model(images, return_masked_feature=True)
+                    masked_feature_erm, _, output, _ = model(images, return_masked_feature=True)
                     model.module.args.mlp = mlp
                     masked_feature_erm_list.append(masked_feature_erm)
                     target_list.append(target)
