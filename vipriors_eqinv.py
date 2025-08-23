@@ -34,6 +34,8 @@ from itertools import chain
 import cv2
 import numpy as np
 
+from prepare import prepare_datasets, traverse_objects
+
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
                      and callable(models.__dict__[name]))
@@ -47,6 +49,10 @@ parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
                          ' | '.join(model_names) +
                          ' (default: resnet18)')
 parser.add_argument('--image_class', choices=['ImageNet', 'STL', 'CIFAR'], default='ImageNet', help='Image class, default=ImageNet')
+parser.add_argument('--train_envs', type=str, nargs='+', default=None, required=True)
+parser.add_argument('--test_envs', type=str, nargs='+', default=None, required=True)
+parser.add_argument('--holdout_fraction', type=float, default=0.8)
+parser.add_argument('--seed', type=int, default=0)
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
 parser.add_argument('--epochs', default=50, type=int, metavar='N',
@@ -320,6 +326,22 @@ class GaussianBlur(object):
 
         return sample
 
+def make_train_transform(image_size=64, randgray=True):
+    kernel_size = int(0.1 * image_size)
+    if (kernel_size % 2) == 0:
+        kernel_size += 1
+    return transforms.Compose([
+        transforms.RandomResizedCrop(image_size),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.ToTensor(),  # <-- important: switch to tensor here
+        transforms.ColorJitter(0.4, 0.4, 0.4, 0.1),
+        transforms.RandomGrayscale(p=0.2) if randgray else transforms.Lambda(lambda x: x),
+        transforms.GaussianBlur(kernel_size=kernel_size),
+        transforms.Normalize([0.4914, 0.4822, 0.4465],
+                             [0.2023, 0.1994, 0.2010]),
+    ])
+
+"""
 def make_train_transform(image_size, args, hard=False):
     return transforms.Compose([
         transforms.RandomResizedCrop(image_size),
@@ -330,6 +352,7 @@ def make_train_transform(image_size, args, hard=False):
         GaussianBlur(kernel_size=int(0.1 * image_size)),
         transforms.ToTensor(),
         transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])])
+"""
 
 def make_test_transform():
     return transforms.Compose([
@@ -337,6 +360,9 @@ def make_test_transform():
         transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])])
 
 def main():
+
+    utils.set_seed(args.seeed)
+    
     if not os.path.exists('{}/{}'.format(args.save_root, args.name)):
         os.makedirs('{}/{}'.format(args.save_root, args.name))
     args.log_file = '{}/{}/eval_log.txt'.format(args.save_root, args.name)
@@ -402,25 +428,61 @@ def main():
     ### prepare few shot dataset
     if args.random_aug:
         train_transform_hard = make_train_transform(image_size, args, hard=True)
-
     train_transform = make_train_transform(args.image_size, args, hard=False)
-
     val_transform = make_test_transform()
-
     target_transform = eval(args.target_transform) if args.target_transform is not None else None
     class_to_idx = eval(args.class_to_idx) if args.class_to_idx is not None else None
-    
-    images = utils.Imagenet_idx(root=args.data+'/val', transform=val_transform, target_transform=target_transform, class_to_idx=class_to_idx)
-    val_loader = torch.utils.data.DataLoader(images, batch_size=args.batch_size, num_workers=args.workers, shuffle=args.val_shuffle)
-    test_images = utils.Imagenet_idx(root=args.data+'/testgt', transform=val_transform, target_transform=target_transform, class_to_idx=class_to_idx)
-    test_loader = torch.utils.data.DataLoader(test_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=args.test_shuffle)
-
+    wrap = args.extract_features
     if args.random_aug:
-        train_images = utils.Imagenet_idx_pair_transformone(root=args.data + '/train', transform_simple=train_transform, 
-            transform_hard=train_transform_hard, target_transform=target_transform, class_to_idx=class_to_idx)
+        train_transform_train = train_transform_hard
+        train_dataset = utils.Imagenet_idx_pair_transformone
     else:
-        train_images = utils.Imagenet_idx_pair(root=args.data+'/train', transform=train_transform, target_transform=target_transform, class_to_idx=class_to_idx)
-    memory_images = utils.Imagenet_idx(root=args.data + '/train', transform=val_transform, target_transform=target_transform, class_to_idx=class_to_idx)
+        train_transform_train = train_transform
+        train_dataset = utils.Imagenet_idx_pair
+    
+    # descriptors of train data
+    train_desc  =   {'dataset': train_dataset,
+                      'transform': train_transform_train,
+                      'target_transform': target_transform,
+                      'class_to_index': class_to_idx,
+                      'wrap': False, # for changeable target transform
+                      'target_pos': 2,
+                      'required_split': "in",
+                    }
+    memory_desc =   {'dataset': utils.Imagenet_idx,
+                      'transform': val_transform,
+                      'target_transform': target_transform,
+                      'class_to_index': class_to_idx,
+                      'wrap': False, # for changeable target transform
+                      'target_pos': 2,
+                      'required_split': "in",
+                    }
+    val_desc    =   {'dataset': utils.Imagenet_idx,
+                      'transform': val_transform,
+                      'target_transform': target_transform,
+                      'class_to_index': class_to_idx,
+                      'wrap': wrap, # for changeable target transform
+                      'target_pos': 2,
+                      'required_split': "out",
+                    }
+    # descriptors of test data
+    test_desc   =   {'dataset': utils.Imagenet_idx,
+                      'transform': val_transform,
+                      'target_transform': target_transform,
+                      'class_to_index': class_to_idx,
+                      'wrap': wrap, # for changeable target transform
+                      'target_pos': 2,
+                      'required_split': "in",
+                    }
+
+    datas = prepare_datasets(args.data, args.train_envs, [train_desc, memory_desc, val_desc], args.holdout_fraction, args.seed)
+    train_images, memory_images, images = tuple(data[0] for data in datas)
+
+    datas = prepare_datasets(args.data, args.test_envs, [test_desc], 1.0, args.seed)
+    test_images = datas[0][0]
+
+    val_loader = torch.utils.data.DataLoader(images, batch_size=args.batch_size, num_workers=args.workers, shuffle=args.val_shuffle)
+    test_loader = torch.utils.data.DataLoader(test_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=args.test_shuffle)
     train_loader = torch.utils.data.DataLoader(train_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=True, drop_last=True)
     memory_loader = torch.utils.data.DataLoader(memory_images, batch_size=args.batch_size, num_workers=args.workers, shuffle=False)
 
