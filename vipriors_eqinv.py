@@ -361,7 +361,7 @@ def make_test_transform():
 
 def main():
 
-    utils.set_seed(args.seeed)
+    utils.set_seed(args.seed)
     
     if not os.path.exists('{}/{}'.format(args.save_root, args.name)):
         os.makedirs('{}/{}'.format(args.save_root, args.name))
