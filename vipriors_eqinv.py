@@ -326,7 +326,7 @@ class GaussianBlur(object):
 
         return sample
 
-def make_train_transform(image_size=64, randgray=True):
+def make_train_transform(image_size=64, randgray=True, hard=False):
     kernel_size = int(0.1 * image_size)
     if (kernel_size % 2) == 0:
         kernel_size += 1
@@ -334,7 +334,8 @@ def make_train_transform(image_size=64, randgray=True):
         transforms.RandomResizedCrop(image_size),
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.ToTensor(),  # <-- important: switch to tensor here
-        transforms.ColorJitter(0.4, 0.4, 0.4, 0.1),
+        transforms.RandAugment() if hard else transforms.Lambda(lambda x: x),
+        transforms.RandomApply([transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8),
         transforms.RandomGrayscale(p=0.2) if randgray else transforms.Lambda(lambda x: x),
         transforms.GaussianBlur(kernel_size=kernel_size),
         transforms.Normalize([0.4914, 0.4822, 0.4465],
